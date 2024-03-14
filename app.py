@@ -107,6 +107,72 @@ def transit():
         # Handling errors
         return jsonify({'error': str(e)}), 500
 
+@app.route('/maps/route/drive', methods=['POST'])
+@cross_origin()
+def route():
+    try:
+        data = request.get_json()
+        origin_address = data.get("origin", {}).get("address", "")
+        destination_address = data.get("destination", {}).get("address", "")
+        compute_alternative_routes = data.get("computeAlternativeRoutes", True)
+        
+        # Construct the payload for the Google Directions API request
+        api_payload = {
+            "origin": origin_address,
+            "destination": destination_address,
+            "alternatives": compute_alternative_routes,
+            "travelMode": data.get("travelMode"),
+            "routingPreference": data.get("routingPreference")
+        }
+        url = "https://maps.googleapis.com/maps/api/directions/json"
+        
+        # Making the GET request to the Google Directions API
+        response = requests.get(url, params={**api_payload, "key": api_key})
+        response_data = response.json()
+        
+        # Logging and returning the data
+        print(response_data)
+        return jsonify(response_data)
+    except Exception as e:
+        # Handling errors
+        return jsonify({'error': str(e)}), 500
+
+######################TODO
+@app.route('/maps/route/transit', methods=['POST'])
+@cross_origin()
+def route():
+    try:
+        data = request.get_json()
+        origin_address = data.get("origin", {}).get("address", "")
+        destination_address = data.get("destination", {}).get("address", "")
+        travel_mode = data.get("travelMode", "TRANSIT")
+        compute_alternative_routes = data.get("computeAlternativeRoutes", True)
+        transit_preferences = data.get("transitPreferences", {})
+        
+        # Construct the payload for the Google Directions API request
+        api_payload = {
+            "origin": origin_address,
+            "destination": destination_address,
+            "mode": travel_mode.lower(),
+            "alternatives": compute_alternative_routes,
+            "transit_mode": transit_preferences.get("allowedTravelModes", ["train"]),
+            "transit_routing_preference": transit_preferences.get("routingPreference", "less_walking")
+        }
+        
+        url = "https://maps.googleapis.com/maps/api/directions/json"
+        
+        # Making the GET request to the Google Directions API
+        response = requests.get(url, params={**api_payload, "key": api_key})
+        response_data = response.json()
+        
+        # Logging and returning the data
+        print(response_data)
+        return jsonify(response_data)
+    except Exception as e:
+        # Handling errors
+        return jsonify({'error': str(e)}), 500
+    
+
 @app.route('/maps/textsearch', methods=['POST'])
 @cross_origin()
 def textsearch():

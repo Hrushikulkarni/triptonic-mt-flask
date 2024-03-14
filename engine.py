@@ -34,43 +34,42 @@ def processPrompt(strInput):
         return food_items_found
 
     matcher = train_food()
-    # sentence = "I had pizza and salad for dinner last night, and I'm thinking of having sushi for lunch today."
     food_items = extract_food_items(strInput)
     print("Food items mentioned:", food_items)
-
-    # sentence = "I have visited Los Angeles."
     cities = extract_cities(strInput)
     print("Cities mentioned:", cities)
 
     url = "http://127.0.0.1:5002"
+    combined_response = {}
 
-    if len(food_items) == 0:
-        data = {
-        "city": cities[0]
-        }
-
-        response = requests.post(url + "/maps/tourist", json=data)
-
-    # Print response from server (optional)
-        if response.status_code == 200:
-            print("Success:", response.json())
-            return response.json()
+    if cities:
+        city = cities[0]  # Assuming we're only interested in the first city mentioned
+        tourist_data = {"city": city}
+        tourist_response = requests.post(url + "/maps/tourist", json=tourist_data)
+        if tourist_response.status_code == 200:
+            print("Tourist Info Success:", tourist_response.json())
+            combined_response["tourist"] = tourist_response.json()
         else:
-            print("Error:", response.status_code, response.text)
+            print("Tourist Info Error:", tourist_response.status_code, tourist_response.text)
 
-    else:
-        data = {
-        "city": cities[0],
-        "category": food_items[0]
-        }
-
-        response = requests.post(url + "/maps/restaurants", json=data)
-
-    # Print response from server (optional)
-        if response.status_code == 200:
-            print("Success:", response.json())
-            return response.json()
+        transit_data = {"city": city}
+        transit_response = requests.post(url + "/maps/transit", json=transit_data)
+        if transit_response.status_code == 200:
+            print("Transit Info Success:", transit_response.json())
+            combined_response["transit"] = transit_response.json()
         else:
-            print("Error:", response.status_code, response.text)
+            print("Transit Info Error:", transit_response.status_code, transit_response.text)
 
-# processPrompt('Went to New York for a pizza.')
+        if food_items:
+            restaurant_data = {
+                "city": city,
+                "category": food_items[0]
+            }
+            restaurant_response = requests.post(url + "/maps/restaurants", json=restaurant_data)
+            if restaurant_response.status_code == 200:
+                print("Restaurant Info Success:", restaurant_response.json())
+                combined_response["restaurant"] = restaurant_response.json()
+            else:
+                print("Restaurant Info Error:", restaurant_response.status_code, restaurant_response.text)
+
+    return combined_response

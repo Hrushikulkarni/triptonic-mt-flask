@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import requests
-from engine import processPrompt
+from src.engine import processPrompt
+from src.utils import load_secets
 from flask_cors import CORS, cross_origin
 from dotenv import load_dotenv
 import os
@@ -8,8 +9,7 @@ import os
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
-load_dotenv()
-api_key = os.getenv('api_key')
+google_maps_key = load_secets()['GOOGLE_MAPS_API_KEY']
 
 @app.route("/hello")
 @cross_origin()
@@ -44,7 +44,7 @@ def mresto():
         
         # Constructing the query URL
         query = f"{category}+{city}"
-        url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=restaurant&key={api_key}"
+        url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=restaurant&key={google_maps_key}"
         
         # Making the GET request to the Google Places API
         response = requests.get(url)
@@ -69,7 +69,7 @@ def tourism():
         
         # Constructing the query URL
         query = f"{neighborhood}+{city}"
-        url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=tourist_attraction&key={api_key}"
+        url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=tourist_attraction&key={google_maps_key}"
         
         # Making the GET request to the Google Places API
         response = requests.get(url)
@@ -94,7 +94,7 @@ def transit():
         
         # Constructing the query URL
         query = f"{city}"
-        url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=transit_station&key={api_key}"
+        url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=transit_station&key={google_maps_key}"
         
         # Making the GET request to the Google Places API
         response = requests.get(url)
@@ -127,7 +127,7 @@ def route():
         url = "https://maps.googleapis.com/maps/api/directions/json"
         
         # Making the GET request to the Google Directions API
-        response = requests.get(url, params={**api_payload, "key": api_key})
+        response = requests.get(url, params={**api_payload, "key": google_maps_key})
         response_data = response.json()
         
         # Logging and returning the data
@@ -140,7 +140,7 @@ def route():
 ######################TODO
 @app.route('/maps/route/transit', methods=['POST'])
 @cross_origin()
-def route():
+def route_transit():
     try:
         data = request.get_json()
         origin_address = data.get("origin", {}).get("address", "")
@@ -162,7 +162,7 @@ def route():
         url = "https://maps.googleapis.com/maps/api/directions/json"
         
         # Making the GET request to the Google Directions API
-        response = requests.get(url, params={**api_payload, "key": api_key})
+        response = requests.get(url, params={**api_payload, "key": google_maps_key})
         response_data = response.json()
         
         # Logging and returning the data
@@ -186,7 +186,7 @@ def textsearch():
             # Set up the headers for the POST request
             headers = {
                 'Content-Type': 'application/json',
-                'X-Goog-Api-Key': api_key,  # Replace 'YOUR_API_KEY' with your actual API key
+                'X-Goog-Api-Key': google_maps_key,  # Replace 'YOUR_google_maps_key' with your actual API key
                 'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.priceLevel'
             }
 
@@ -224,7 +224,7 @@ def nearsearch():
             # Set up the headers for the POST request
             headers = {
                 'Content-Type': 'application/json',
-                'X-Goog-Api-Key': api_key,  # Replace 'YOUR_API_KEY' with your actual API key
+                'X-Goog-Api-Key': google_maps_key,  # Replace 'YOUR_google_maps_key' with your actual API key
                 'X-Goog-FieldMask': 'places.displayName'
             }
 
@@ -237,3 +237,7 @@ def nearsearch():
         except Exception as e:
             # Handle errors
             return jsonify({'error': str(e)}), 500
+
+
+if __name__ == '__main__':
+    app.run(port=5002)

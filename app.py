@@ -16,6 +16,7 @@ api_key = os.getenv('api_key')
 def hello_world():
     return "Hello, World!"
 
+# API to get prompt from user, calls process prompt
 @app.route('/prompt', methods=['POST'])
 @cross_origin()
 def prompt():
@@ -30,6 +31,7 @@ def prompt():
         # Handling errors
         return jsonify({'error': str(e)}), 500
 
+# API to find restaurants in that city and of that category
 @app.route('/maps/restaurants', methods=['POST'])
 @cross_origin()
 def mresto():
@@ -57,6 +59,7 @@ def mresto():
         # Handling errors
         return jsonify({'error': str(e)}), 500
 
+# API to find tourist places in that city
 @app.route('/maps/tourist', methods=['POST'])
 @cross_origin()
 def tourism():
@@ -81,7 +84,8 @@ def tourism():
     except Exception as e:
         # Handling errors
         return jsonify({'error': str(e)}), 500
-    
+
+# API to find transit stations
 @app.route('/maps/transit', methods=['POST'])
 @cross_origin()
 def transit():
@@ -107,6 +111,7 @@ def transit():
         # Handling errors
         return jsonify({'error': str(e)}), 500
 
+# API for chooding drive route
 @app.route('/maps/route/drive', methods=['POST'])
 @cross_origin()
 def route():
@@ -138,39 +143,39 @@ def route():
         return jsonify({'error': str(e)}), 500
 
 ######################TODO
-@app.route('/maps/route/transit', methods=['POST'])
-@cross_origin()
-def route():
-    try:
-        data = request.get_json()
-        origin_address = data.get("origin", {}).get("address", "")
-        destination_address = data.get("destination", {}).get("address", "")
-        travel_mode = data.get("travelMode", "TRANSIT")
-        compute_alternative_routes = data.get("computeAlternativeRoutes", True)
-        transit_preferences = data.get("transitPreferences", {})
+# @app.route('/maps/route/transit', methods=['POST'])
+# @cross_origin()
+# def route():
+#     try:
+#         data = request.get_json()
+#         origin_address = data.get("origin", {}).get("address", "")
+#         destination_address = data.get("destination", {}).get("address", "")
+#         travel_mode = data.get("travelMode", "TRANSIT")
+#         compute_alternative_routes = data.get("computeAlternativeRoutes", True)
+#         transit_preferences = data.get("transitPreferences", {})
         
-        # Construct the payload for the Google Directions API request
-        api_payload = {
-            "origin": origin_address,
-            "destination": destination_address,
-            "mode": travel_mode.lower(),
-            "alternatives": compute_alternative_routes,
-            "transit_mode": transit_preferences.get("allowedTravelModes", ["train"]),
-            "transit_routing_preference": transit_preferences.get("routingPreference", "less_walking")
-        }
+#         # Construct the payload for the Google Directions API request
+#         api_payload = {
+#             "origin": origin_address,
+#             "destination": destination_address,
+#             "mode": travel_mode.lower(),
+#             "alternatives": compute_alternative_routes,
+#             "transit_mode": transit_preferences.get("allowedTravelModes", ["train"]),
+#             "transit_routing_preference": transit_preferences.get("routingPreference", "less_walking")
+#         }
         
-        url = "https://maps.googleapis.com/maps/api/directions/json"
+#         url = "https://maps.googleapis.com/maps/api/directions/json"
         
-        # Making the GET request to the Google Directions API
-        response = requests.get(url, params={**api_payload, "key": api_key})
-        response_data = response.json()
+#         # Making the GET request to the Google Directions API
+#         response = requests.get(url, params={**api_payload, "key": api_key})
+#         response_data = response.json()
         
-        # Logging and returning the data
-        print(response_data)
-        return jsonify(response_data)
-    except Exception as e:
-        # Handling errors
-        return jsonify({'error': str(e)}), 500
+#         # Logging and returning the data
+#         print(response_data)
+#         return jsonify(response_data)
+#     except Exception as e:
+#         # Handling errors
+#         return jsonify({'error': str(e)}), 500
     
 
 @app.route('/maps/textsearch', methods=['POST'])
@@ -237,3 +242,72 @@ def nearsearch():
         except Exception as e:
             # Handle errors
             return jsonify({'error': str(e)}), 500
+
+# find routes        
+# API  https://routes.googleapis.com/directions/v2:computeRoutes
+@app.route('/maps/findroutes', methods=['POST'])
+@cross_origin()
+def findroutes():
+    if request.method == 'POST':
+        try:
+            # Define the payload for the POST request
+            payload = {
+                "origin": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 37.419734,
+                            "longitude": -122.0827784
+                        }
+                    }
+                },
+                "destination": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 37.417670,
+                            "longitude": -122.079595
+                        }
+                    }
+                },
+                "travelMode": "DRIVE",
+                "routingPreference": "TRAFFIC_AWARE",
+                "departureTime": "2024-04-25T15:01:23.045123456Z",
+                "computeAlternativeRoutes": True,
+                "routeModifiers": {
+                    "avoidTolls": False,
+                    "avoidHighways": False,
+                    "avoidFerries": False
+                },
+                "languageCode": "en-US",
+                "units": "IMPERIAL"
+            }
+
+            # Set up the headers for the POST request
+            headers = {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': api_key,  
+                'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline'
+            }
+
+            # Make the POST request using requests
+            #https://routes.googleapis.com/directions/v2:computeRoutes
+            #https://maps.googleapis.com/maps/api/directions/json
+
+            response = requests.post('https://routes.googleapis.com/directions/v2:computeRoutes', json=payload, headers=headers)
+
+            routes_data = response.json().get('routes', [])
+            routes = []
+            for route_data in routes_data:
+                route = {
+                    'duration': route_data.get('duration', {}).get('text', ''),
+                    'distance': route_data.get('distanceMeters', 0),
+                    'polyline': route_data.get('polyline', {}).get('encodedPolyline', ''),
+                }
+                routes.append(route)
+
+            return jsonify(routes)
+
+        except Exception as e:
+            # Handle errors
+            return jsonify({'error': str(e)}), 500
+
+

@@ -99,14 +99,18 @@ class ExtractParametersTemplate(object):
 
             Output:
             {{
-                "location": "Irvine, Los Angeles",
+                "location": "Irvine, San Diego",
                 "duration": 2,
                 "no_of_people": 7,
                 "mode_of_transport": "car",
                 "type_of_trip": "friends",
-                "cuisine": "Italian",
+                "cuisine": "Mexican, Indian",
                 "attractions": "Cafe"
             }}
+
+            In the example above "Mexican" and "Indian" are cuisines, not a location.
+            One observation is that places with suffix is usually not a actuall location.
+            and cuisines will come some word like "cuisine" and "food", don't consider them as location.
 
             mode_of_transport can be only one of the following options: "car", "train", "bus", "airplane".
             type_of_trip can be only one of the following options: "family", "friends", "couple".

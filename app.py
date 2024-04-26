@@ -1,15 +1,17 @@
 from flask import Flask, request, jsonify
 import requests
 from src.engine import processPrompt
-from src.utils import load_secets
+from src.utils import load_secrets
 from flask_cors import CORS, cross_origin
 from dotenv import load_dotenv
-import os
+from src.data_loaders import DataLoader
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
-google_maps_key = load_secets()['GOOGLE_MAPS_API_KEY']
+google_maps_key = load_secrets()['GOOGLE_MAPS_API_KEY']
+
+data_loader = DataLoader(google_api_key=load_secrets()['GOOGLE_MAPS_API_KEY'])
 
 @app.route("/hello")
 @cross_origin()
@@ -21,13 +23,10 @@ def hello_world():
 def prompt():
     try:
         data = request.get_json()
-        prompt = data.get('prompt')
+        prompt_text = data.get('prompt')
+        return data_loader.prompt(prompt_text)
 
-        print(prompt)
-        return processPrompt(prompt)
-    
     except Exception as e:
-        # Handling errors
         return jsonify({'error': str(e)}), 500
 
 @app.route('/maps/restaurants', methods=['POST'])

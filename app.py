@@ -1,9 +1,7 @@
 from flask import Flask, request, jsonify
 import requests
-from src.engine import processPrompt
 from src.utils import load_secrets
 from flask_cors import CORS, cross_origin
-from dotenv import load_dotenv
 from src.data_loaders import DataLoader
 
 app = Flask(__name__)
@@ -28,6 +26,40 @@ def prompt():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/userinput', methods=['POST'])
+@cross_origin()
+def user_input():
+    try:
+        data = request.get_json()
+        prompt_text = data.get('prompt')
+        input = data_loader.get_input(prompt_text)
+        return jsonify(input)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/parameters', methods=['GET'])
+@cross_origin()
+def all_parameters():
+    parameters = {
+        'cuisines': [
+            "🍕Italian",
+            "🍛Indian",
+            "🍜Japanese",
+            "🌮Mexican",
+            "🍟French",
+            "🍖Chinese",
+            "🍙Korean",
+        ],
+        'mode_of_transports': ["🚗 Car", "🚌 Bus", "🚂 Trains", "🛩️ Airplanes"],
+        'type_of_trips': ["🧑‍🧑‍🧒‍🧒 Family", "👯 Friends", "👩‍❤️‍👨 Couples"],
+        'attractions': ["🎢 Park", "🦖 Museums", "🕺🏻 Clubs"]
+    }
+
+    return jsonify(parameters)
 
 @app.route('/maps/restaurants', methods=['POST'])
 @cross_origin()

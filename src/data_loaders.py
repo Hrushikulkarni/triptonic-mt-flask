@@ -10,15 +10,19 @@ print(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.utils import load_secrets
 from src.llm.agent import Agent
+from src.engine import Engine
 
 class DataLoader(object):
     def __init__(self, google_api_key):
         self.api_key = google_api_key
         self.secrets = load_secrets()
+
+    def get_input(self, query):
+        travel_agent = Agent(google_gemini_key= self.secrets['GOOGLE_GEMINI_API_KEY'], debug=True)
+        return travel_agent.validate_travel(query)
     
     def prompt(self, query):
-        travel_agent = Agent(google_gemini_key= self.secrets['GOOGLE_GEMINI_API_KEY'], debug=True)
-        input = travel_agent.validate_travel(query)
+        input = self.get_input(query)
         input['location'] = input['location'].replace(", ", '|')
         input['cuisine'] = input['cuisine'].replace(", ", '|')
 
@@ -28,9 +32,14 @@ class DataLoader(object):
         result['transit'] = self.get_transit(input['location'])
         result['tourist'] = self.get_tourist('', input['location'])
 
-        return jsonify(result)
+        #### TODO: save the result to cache
+
+        filtered = Engine.filtering(result)
+        flatData = Engine.covertFlat(filtered)
+
+        return jsonify(flatData)
     
-    def places(self, query):
+    def places(self):
         pass
 
     def get_restaurants(self, cuisines, cities):
@@ -58,7 +67,6 @@ class DataLoader(object):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
-
 
     def get_transit(self, cities):
         try:

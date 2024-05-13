@@ -235,7 +235,6 @@ def textsearch():
 @cross_origin()
 def nearsearch():
     if request.method == 'POST':
-        try:
             # Define the payload for the POST request
             payload = {
                 'includedTypes': ['tourist_attraction'],
@@ -265,10 +264,75 @@ def nearsearch():
             # Process the response
             print(response.json())
             return jsonify(response.json())
+
+# find routes        
+# API  https://routes.googleapis.com/directions/v2:computeRoutes
+@app.route('/maps/findroutes', methods=['POST'])
+@cross_origin()
+def findroutes():
+    if request.method == 'POST':
+        try:
+            # google_maps_key = 'YOUR_API_KEY'  # Replace 'YOUR_API_KEY' with your actual API key
+
+            payload = {
+              
+  "origin":{
+    "location":{
+      "latLng":{
+        "latitude": 34.052235,
+        "longitude": -118.243683
+      }
+    }
+  },
+  "destination":{
+    "location":{
+      "latLng":{
+        "latitude": 37.773972,
+        "longitude": -122.431297
+      }
+    }
+  },
+  "travelMode": "DRIVE",
+  "routingPreference": "TRAFFIC_AWARE",
+  "departureTime": "2024-10-15T15:01:23.045123456Z",
+  "computeAlternativeRoutes": False,
+  "routeModifiers": {
+    "avoidTolls": False,
+    "avoidHighways": False,
+    "avoidFerries": False
+  },
+  "languageCode": "en-US",
+  "units": "IMPERIAL"
+}
+            
+            # Make the POST request using requests
+            response = requests.post('https://routes.googleapis.com/directions/v2:computeRoutes?key=AIzaSyDqIoSL0iKbpTakuGm2gHdvXGZyCxYj23Y', json=payload,     headers={'Content-Type': 'application/json',  'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline'}
+ )
+            
+            print("Response Status Code:", response.status_code)
+            print("Response Content:", response.text)
+
+            routes_data = response.json().get('routes', [])
+            routes = []
+            for route_data in routes_data:
+                route = {
+                    'duration': route_data.get('legs', [{}])[0].get('duration', {}).get('text', ''),
+                    'distance': route_data.get('legs', [{}])[0].get('distance', {}).get('value', 0),
+                    'polyline': route_data.get('overview_polyline', {}).get('points', ''),
+                }
+                routes.append(route)
+
+            return jsonify(routes)
+
         except Exception as e:
             # Handle errors
+            print("Error:", e)
             return jsonify({'error': str(e)}), 500
+
+
 
 
 if __name__ == '__main__':
     app.run(port=5002)
+
+

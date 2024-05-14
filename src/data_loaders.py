@@ -4,10 +4,6 @@ import requests
 from flask import jsonify
 import pymongo
 
-MONGO_CONNECTION_STRING = 'mongodb+srv://gghati:Asdf1234$@triptoniccache.4y1fatm.mongodb.net/?retryWrites=true&w=majority&appName=TripTonicCache'
-client = pymongo.MongoClient(MONGO_CONNECTION_STRING)
-mongo_db = client.get_database('TripTonicDump')
-mongo_collection = pymongo.collection.Collection(mongo_db, 'GoogleMapsAPI')
 
 # Add the parent directory of 'src' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -19,12 +15,17 @@ from src.llm.agent import Agent
 from src.engine import Engine
 
 class DataLoader(object):
-    def __init__(self, google_api_key):
-        self.api_key = google_api_key
+    def __init__(self, maps_api_key, mongo_connection_string, gemini_api_key):
+        self.gemini_api_key = gemini_api_key
+        self.maps_api_key = maps_api_key
         self.secrets = load_secrets()
+        print(mongo_connection_string)
+        mongo_client = pymongo.MongoClient(mongo_connection_string)
+        mongo_db = mongo_client.get_database('TripTonicDump')
+        self.mongo_collection = pymongo.collection.Collection(mongo_db, 'GoogleMapsAPI')
 
     def extract_params(self, query):
-        travel_agent = Agent(google_gemini_key= self.secrets['GOOGLE_GEMINI_API_KEY'], debug=True)
+        travel_agent = Agent(google_gemini_key= self.gemini_api_key, debug=True)
         return travel_agent.validate_travel(query)
     
     def apply_filters(self, input):
@@ -57,13 +58,13 @@ class DataLoader(object):
     def get_restaurants(self, cuisines, cities):
         try:
             query = f"{cuisines}+{cities}"
-            url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=restaurant&key={self.api_key}"
+            url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=restaurant&key={self.maps_api_key}"
 
-            response_data = mongo_collection.find_one({'url': url})
+            response_data = self.mongo_collection.find_one({'url': url})
             if response_data is None:
                 response = requests.get(url)
                 response_data = response.json()
-                mongo_collection.insert_one({'url': url, 'response': response_data})
+                self.mongo_collection.insert_one({'url': url, 'response': response_data})
             else:
                 response_data = response_data['response']
 
@@ -75,13 +76,13 @@ class DataLoader(object):
     def get_tourist(self, neighborhood, cities):
         try:
             query = f"{neighborhood}+{cities}"
-            url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=tourist_attraction&key={self.api_key}"
+            url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=tourist_attraction&key={self.maps_api_key}"
             
-            response_data = mongo_collection.find_one({'url': url})
+            response_data = self.mongo_collection.find_one({'url': url})
             if response_data is None:
                 response = requests.get(url)
                 response_data = response.json()
-                mongo_collection.insert_one({'url': url, 'response': response_data})
+                self.mongo_collection.insert_one({'url': url, 'response': response_data})
             else:
                 response_data = response_data['response']
 
@@ -93,13 +94,13 @@ class DataLoader(object):
     def get_transit(self, cities):
         try:
             query = f"{cities}"
-            url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=transit_station&key={self.api_key}"
+            url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=transit_station&key={self.maps_api_key}"
             
-            response_data = mongo_collection.find_one({'url': url})
+            response_data = self.mongo_collection.find_one({'url': url})
             if response_data is None:
                 response = requests.get(url)
                 response_data = response.json()
-                mongo_collection.insert_one({'url': url, 'response': response_data})
+                self.mongo_collection.insert_one({'url': url, 'response': response_data})
             else:
                 response_data = response_data['response']
 

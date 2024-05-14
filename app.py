@@ -9,7 +9,11 @@ cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 google_maps_key = load_secrets()['GOOGLE_MAPS_API_KEY']
 
-data_loader = DataLoader(google_api_key=load_secrets()['GOOGLE_MAPS_API_KEY'])
+secrets = load_secrets()
+
+data_loader = DataLoader(maps_api_key=secrets['GOOGLE_MAPS_API_KEY'], 
+                         mongo_connection_string=secrets['MONGO_CONNECTION_STRING'],
+                         gemini_api_key=secrets['GOOGLE_GEMINI_API_KEY'])
 
 @app.route("/hello")
 @cross_origin()

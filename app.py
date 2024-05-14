@@ -28,7 +28,7 @@ def prompt():
         return jsonify({'error': str(e)}), 500
     
 
-@app.route('/userinput', methods=['POST'])
+@app.route('/extract_parameters', methods=['POST'])
 @cross_origin()
 def user_input():
     try:
@@ -46,17 +46,17 @@ def user_input():
 def all_parameters():
     parameters = {
         'cuisines': [
-            "🍕Italian",
-            "🍛Indian",
-            "🍜Japanese",
-            "🌮Mexican",
-            "🍟French",
-            "🍖Chinese",
-            "🍙Korean",
+            "Italian",
+            "Indian",
+            "Japanese",
+            "Mexican",
+            "French",
+            "Chinese",
+            "Korean",
         ],
-        'mode_of_transports': ["🚗 Car", "🚌 Bus", "🚂 Trains", "🛩️ Airplanes"],
-        'type_of_trips': ["🧑‍🧑‍🧒‍🧒 Family", "👯 Friends", "👩‍❤️‍👨 Couples"],
-        'attractions': ["🎢 Park", "🦖 Museums", "🕺🏻 Clubs"]
+        'mode_of_transports': ["Car", "Bus", "Trains", "Airplanes"],
+        'type_of_trips': ["Family", "Friends", "Couples"],
+        'attractions': ["Park", "Museums", "Clubs"]
     }
 
     return jsonify(parameters)

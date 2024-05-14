@@ -30,6 +30,7 @@ class Engine(object):
             flatRow['longitudeDelta'] = 1
             flatRow['icon'] = row['icon']
             flatRow['name'] = row['name']
+            flatRow['rating'] = row['rating']
             flatRow['photos'] = row['photos'][0]
             flatData.append(flatRow)
         

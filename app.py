@@ -34,7 +34,7 @@ def user_input():
     try:
         data = request.get_json()
         prompt_text = data.get('prompt')
-        input = data_loader.get_input(prompt_text)
+        input = data_loader.extract_params(prompt_text)
         return jsonify(input)
 
     except Exception as e:

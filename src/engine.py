@@ -10,11 +10,11 @@ class Engine(object):
             if i < len(data['restaurant']['results']):
                 filtered.append(data['restaurant']['results'][i])
 
-        for i in range(0, 3):
+        for i in range(0, 2):
             if i < len(data['transit']['results']):
                 filtered.append(data['transit']['results'][i])
 
-        for i in range(0, 4):
+        for i in range(0, 5):
             if i < len(data['tourist']['results']):
                 filtered.append(data['tourist']['results'][i])
 

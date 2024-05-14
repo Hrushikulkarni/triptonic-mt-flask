@@ -17,27 +17,29 @@ class DataLoader(object):
         self.api_key = google_api_key
         self.secrets = load_secrets()
 
-    def get_input(self, query):
+    def extract_params(self, query):
         travel_agent = Agent(google_gemini_key= self.secrets['GOOGLE_GEMINI_API_KEY'], debug=True)
         return travel_agent.validate_travel(query)
     
     def prompt(self, query):
-        input = self.get_input(query)
+        input = params = self.extract_params(query)
         input['location'] = input.get('location', '').replace(", ", '|')
         input['cuisine'] = input.get('cuisine', '').replace(", ", '|')
 
-        result = {}
-
-        result['restaurant'] = self.get_restaurants(input['cuisine'], input['location'])
-        result['transit'] = self.get_transit(input['location'])
-        result['tourist'] = self.get_tourist('', input['location'])
+        places = {}
+        places['restaurant'] = self.get_restaurants(input['cuisine'], input['location'])
+        places['transit'] = self.get_transit(input['location'])
+        places['tourist'] = self.get_tourist('', input['location'])
 
         #### TODO: save the result to cache
 
-        filtered = Engine.filtering(result)
+        filtered = Engine.filtering(places)
         flatData = Engine.covertFlat(filtered)
 
-        return jsonify(flatData)
+        results = {}
+        results['places'] = flatData
+        results['prompt'] = params
+        return jsonify(results)
     
     def places(self):
         pass

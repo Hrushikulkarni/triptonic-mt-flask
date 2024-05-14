@@ -27,7 +27,6 @@ def prompt():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-
 @app.route('/extract_parameters', methods=['POST'])
 @cross_origin()
 def extract_parameters():
@@ -39,7 +38,6 @@ def extract_parameters():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/apply_filters', methods=['POST'])
 @cross_origin()
@@ -68,7 +66,6 @@ def all_parameters():
         'type_of_trips': ["Family", "Friends", "Couples"],
         'attractions': ["Park", "Museums", "Clubs"]
     }
-
     return jsonify(parameters)
 
 @app.route('/maps/restaurants', methods=['POST'])

@@ -2,6 +2,12 @@ import sys
 import os
 import requests
 from flask import jsonify
+import pymongo
+
+MONGO_CONNECTION_STRING = 'mongodb+srv://gghati:Asdf1234$@triptoniccache.4y1fatm.mongodb.net/?retryWrites=true&w=majority&appName=TripTonicCache'
+client = pymongo.MongoClient(MONGO_CONNECTION_STRING)
+mongo_db = client.get_database('TripTonicDump')
+mongo_collection = pymongo.collection.Collection(mongo_db, 'GoogleMapsAPI')
 
 # Add the parent directory of 'src' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -53,8 +59,13 @@ class DataLoader(object):
             query = f"{cuisines}+{cities}"
             url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=restaurant&key={self.api_key}"
 
-            response = requests.get(url)
-            response_data = response.json()
+            response_data = mongo_collection.find_one({'url': url})
+            if response_data is None:
+                response = requests.get(url)
+                response_data = response.json()
+                mongo_collection.insert_one({'url': url, 'response': response_data})
+            else:
+                response_data = response_data['response']
 
             return response_data
         
@@ -66,8 +77,13 @@ class DataLoader(object):
             query = f"{neighborhood}+{cities}"
             url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=tourist_attraction&key={self.api_key}"
             
-            response = requests.get(url)
-            response_data = response.json()
+            response_data = mongo_collection.find_one({'url': url})
+            if response_data is None:
+                response = requests.get(url)
+                response_data = response.json()
+                mongo_collection.insert_one({'url': url, 'response': response_data})
+            else:
+                response_data = response_data['response']
 
             return response_data
 
@@ -79,8 +95,13 @@ class DataLoader(object):
             query = f"{cities}"
             url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=transit_station&key={self.api_key}"
             
-            response = requests.get(url)
-            response_data = response.json()
+            response_data = mongo_collection.find_one({'url': url})
+            if response_data is None:
+                response = requests.get(url)
+                response_data = response.json()
+                mongo_collection.insert_one({'url': url, 'response': response_data})
+            else:
+                response_data = response_data['response']
 
             return response_data
         except Exception as e:

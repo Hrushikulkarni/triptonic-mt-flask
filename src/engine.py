@@ -6,7 +6,7 @@ class Engine(object):
     @staticmethod
     def filtering(data):
         filtered = []
-        for i in range(0, 3):
+        for i in range(0, 4):
             if i < len(data['restaurant']['results']):
                 filtered.append(data['restaurant']['results'][i])
 
@@ -14,7 +14,7 @@ class Engine(object):
             if i < len(data['transit']['results']):
                 filtered.append(data['transit']['results'][i])
 
-        for i in range(0, 5):
+        for i in range(0, 4):
             if i < len(data['tourist']['results']):
                 filtered.append(data['tourist']['results'][i])
 

@@ -94,7 +94,7 @@ class ExtractParametersTemplate(object):
 
             ####
             Plan a two day trip from Irvine to San Diego. It should be for seven people.
-            You can consider Mexican and Indian cuisine and it is a Friends road trip. Wish to explore the Pizza places! Would like to Cafe hop along the way.
+            You can consider Mexican and Indian cuisine and it is a Friends road trip. Wish to explore the pizza places! Would like to cafe hop along the way.
             #####
 
             Output:
@@ -104,17 +104,31 @@ class ExtractParametersTemplate(object):
                 "no_of_people": 7,
                 "mode_of_transport": "car",
                 "type_of_trip": "friends",
-                "cuisine": "Mexican, Indian",
-                "attractions": "Cafe"
+                "cuisine": "mexican, indian",
+                "attractions": "cafe"
             }}
 
-            In the example above "Mexican" and "Indian" are cuisines, not a location.
+            In the example above "mexican" and "indian" are cuisines, not a location.
             One observation is that places with suffix is usually not a actuall location.
             and cuisines will come some word like "cuisine" and "food", don't consider them as location.
 
             mode_of_transport can be only one of the following options: "car", "train", "bus", "airplane".
             type_of_trip can be only one of the following options: "family", "friends", "couple".
+            these values should all be in lowercase.
+
             For rest of the parameters, make the best guess based on the trip location and other parameters.
+
+            the ouput must contain every parameter: location, duration, no_of_people, mode_of_transport, type_of_trip, cuisine, attractions
+            and it must not be null, have these default values:
+            mode_of_transports: car
+            type_of_trips: family
+            attractions: park
+            cuisines: italian
+            no_of_people: 2
+            duration: 2
+
+            Also, if in prompt, food items like pizza or pasta is mentioned then it's cuisine will be "italian", not pizza and pasta
+            similar is sushi is mentioned, then it's cuisine will be japanese.
         """
 
         self.human_template = """

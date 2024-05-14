@@ -21,8 +21,8 @@ class DataLoader(object):
         travel_agent = Agent(google_gemini_key= self.secrets['GOOGLE_GEMINI_API_KEY'], debug=True)
         return travel_agent.validate_travel(query)
     
-    def prompt(self, query):
-        input = params = self.extract_params(query)
+    def apply_filters(self, input):
+        params = input
         input['location'] = input.get('location', '').replace(", ", '|')
         input['cuisine'] = input.get('cuisine', '').replace(", ", '|')
 
@@ -40,6 +40,10 @@ class DataLoader(object):
         results['places'] = flatData
         results['prompt'] = params
         return jsonify(results)
+    
+    def prompt(self, query):
+        input = self.extract_params(query)
+        return self.apply_filters(input)
     
     def places(self):
         pass

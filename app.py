@@ -30,7 +30,7 @@ def prompt():
 
 @app.route('/extract_parameters', methods=['POST'])
 @cross_origin()
-def user_input():
+def extract_parameters():
     try:
         data = request.get_json()
         prompt_text = data.get('prompt')
@@ -40,6 +40,16 @@ def user_input():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/apply_filters', methods=['POST'])
+@cross_origin()
+def apply_filters():
+    try:
+        input_filters = request.get_json()
+        return data_loader.apply_filters(input_filters)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/parameters', methods=['GET'])
 @cross_origin()

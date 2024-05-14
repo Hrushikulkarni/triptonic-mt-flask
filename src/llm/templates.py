@@ -115,8 +115,6 @@ class ExtractParametersTemplate(object):
             mode_of_transport can be only one of the following options: "car", "train", "bus", "airplane".
             type_of_trip can be only one of the following options: "family", "friends", "couple".
             For rest of the parameters, make the best guess based on the trip location and other parameters.
-
-            Output should have all the parameters: location, duration, no_of_people, mode_of_transport, type_of_trip, cuisine, attractions
         """
 
         self.human_template = """

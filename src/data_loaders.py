@@ -23,8 +23,8 @@ class DataLoader(object):
     
     def prompt(self, query):
         input = self.get_input(query)
-        input['location'] = input['location'].replace(", ", '|')
-        input['cuisine'] = input['cuisine'].replace(", ", '|')
+        input['location'] = input.get('location', '').replace(", ", '|')
+        input['cuisine'] = input.get('cuisine', '').replace(", ", '|')
 
         result = {}
 

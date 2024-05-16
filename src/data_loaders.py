@@ -10,7 +10,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 print(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
-from src.utils import load_secrets
 from src.llm.agent import Agent
 from src.engine import Engine
 
@@ -18,7 +17,6 @@ class DataLoader(object):
     def __init__(self, maps_api_key, mongo_connection_string, gemini_api_key):
         self.gemini_api_key = gemini_api_key
         self.maps_api_key = maps_api_key
-        self.secrets = load_secrets()
         print(mongo_connection_string)
         mongo_client = pymongo.MongoClient(mongo_connection_string)
         mongo_db = mongo_client.get_database('TripTonicDump')

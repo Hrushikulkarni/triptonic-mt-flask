@@ -3,6 +3,7 @@ import requests
 from src.utils import load_secrets
 from flask_cors import CORS, cross_origin
 from src.data_loaders import DataLoader
+from src.link import MagicLink
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -28,6 +29,29 @@ def prompt():
         prompt_text = data.get('prompt')
         return data_loader.prompt(prompt_text)
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/save_trip', methods=['POST'])
+@cross_origin()
+def save_trip():
+    try:
+        data = request.get_json()
+        trip = data.get('trip')
+        name = data.get('name')
+
+        link = MagicLink.generate_link()
+        MagicLink.save_trip(link, name, trip)
+        return jsonify({"link": link, "name": name, "trip": trip})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/get_trip/<link>')
+@cross_origin()
+def get_trip(link):
+    try:        
+        return jsonify(MagicLink.get_trip(link))
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
@@ -338,10 +362,7 @@ def findroutes():
         except Exception as e:
             # Handle errors
             print("Error:", e)
-            return jsonify({'error': str(e)}), 500
-
-
-
+            return jsonify({'error': str(e)}), 500 
 
 if __name__ == '__main__':
     app.run(port=5002)

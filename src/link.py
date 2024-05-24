@@ -1,5 +1,5 @@
 import pymongo
-from utils import load_secrets
+from src.utils import load_secrets
 import random
 import string
 
@@ -10,17 +10,20 @@ class MagicLink(object):
     mongo_collection = pymongo.collection.Collection(mongo_db, 'MagicLink')
 
     @staticmethod
-    def generateLink():
+    def generate_link():
         random_str = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase + string.digits, k=5))
         while MagicLink.mongo_collection.find_one({"link": random_str}):
             random_str = ''.join(random.choices(string.ascii_lowercase + string.ascii_uppercase + string.digits, k=5))
         return random_str
 
     @staticmethod
-    def save_trip(link, trip):
-        MagicLink.mongo_collection.insert_one({"link": link, "trip": trip})
+    def save_trip(link, name, trip):
+        MagicLink.mongo_collection.insert_one({"link": link, "name": name, "trip": trip})
 
     @staticmethod
-    def getTrip(link):
+    def get_trip(link):
         res = MagicLink.mongo_collection.find_one({"link": link})
-        return res["trip"] 
+        return {
+            "trip": res['trip'], 
+            "name": res['name']
+        }

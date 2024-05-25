@@ -9,6 +9,7 @@ app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 google_maps_key = load_secrets()['GOOGLE_MAPS_API_KEY']
+wesbite_domain = load_secrets()['WEBSITE_DOMAIN']
 
 secrets = load_secrets()
 
@@ -40,10 +41,10 @@ def save_trip():
         places = data.get('places')
         name = data.get('name')
         params = data.get('params')
-        link = MagicLink.generate_link()
+        link = wesbite_domain + MagicLink.generate_link()
 
         MagicLink.save_trip(link, name, params, places)
-        return jsonify({"link": "https://triptonic.com/" + link})
+        return jsonify({"link": link})
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

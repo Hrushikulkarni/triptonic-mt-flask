@@ -10,9 +10,11 @@ def load_secrets():
   google_gemini_key = os.getenv("GOOGLE_GEMINI_API_KEY")
   google_maps_key = os.getenv("GOOGLE_MAPS_API_KEY")
   mongo_connection_string = os.getenv("MONGO_CONNECTION_STRING")
+  website_domain = os.getenv("WEBSITE_DOMAIN")
 
   return {
     "GOOGLE_GEMINI_API_KEY": google_gemini_key,
     "GOOGLE_MAPS_API_KEY": google_maps_key,
-    "MONGO_CONNECTION_STRING": mongo_connection_string
+    "MONGO_CONNECTION_STRING": mongo_connection_string,
+    "WEBSITE_DOMAIN": website_domain
   }

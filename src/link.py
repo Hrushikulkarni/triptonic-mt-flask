@@ -5,6 +5,7 @@ import string
 
 class MagicLink(object):
     mongo_connection_string = load_secrets()['MONGO_CONNECTION_STRING']
+    website_domain = load_secrets()['WEBSITE_DOMAIN']
     mongo_client = pymongo.MongoClient(mongo_connection_string)
     mongo_db = mongo_client.get_database('TripTonicDump')
     mongo_collection = pymongo.collection.Collection(mongo_db, 'MagicLink')
@@ -22,7 +23,7 @@ class MagicLink(object):
 
     @staticmethod
     def get_trip(link):
-        res = MagicLink.mongo_collection.find_one({"link": link})
+        res = MagicLink.mongo_collection.find_one({"link": MagicLink.website_domain + link})
         return {
             "places": res['places'],
             "params": res['params'],

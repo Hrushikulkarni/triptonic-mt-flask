@@ -32,17 +32,18 @@ def prompt():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-@app.route('/save_trip', methods=['POST'])
+@app.route('/save', methods=['POST'])
 @cross_origin()
 def save_trip():
     try:
         data = request.get_json()
-        trip = data.get('trip')
+        places = data.get('places')
         name = data.get('name')
-
+        params = data.get('params')
         link = MagicLink.generate_link()
-        MagicLink.save_trip(link, name, trip)
-        return jsonify({"link": link, "name": name, "trip": trip})
+
+        MagicLink.save_trip(link, name, params, places)
+        return jsonify({"link": "https://triptonic.com/" + link})
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

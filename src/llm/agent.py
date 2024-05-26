@@ -1,7 +1,7 @@
 import json
 from langchain.chains import LLMChain, SequentialChain
 from langchain_google_genai import GoogleGenerativeAI
-from templates import (
+from .templates import (
     FilteringTemplate,
     ValidateFilteringTemplate,
     ValidationTemplate,

@@ -13,7 +13,11 @@ if __name__ == '__main__':
     travel_agent = Agent(google_gemini_key=secrets['GOOGLE_GEMINI_API_KEY'], debug=True)
 
     query = """
-            Plan a family trip to San Diego covering historical places with Indian cuisine. For a family of five with a tight budget.
+            Plan a family trip to San Diego from Irvine for 2 days covering historical places with Italian cuisine. For a family of five with a tight budget and daily travel from 6 AM to 5 PM.
             """
     output = travel_agent.validate_travel(query)
     print(output)
+
+    filtered_output = travel_agent.validate_filtering(output)
+    print(filtered_output)
+    

@@ -30,16 +30,22 @@ class DataLoader(object):
         params = input
         input['location'] = input.get('location', '').replace(", ", '|')
         input['cuisine'] = input.get('cuisine', '').replace(", ", '|')
+        input['budget'] = input.get('budget', '').replace(", ", "|")
+        input['timings'] = input.get('timings', '').replace(", ", "|")
+        input['origin'] = input.get('origin', '').replace(", ", "|")
+
+        if input['budget'] is 'tight':
+            input['budget'] = 200
 
         places = {}
         places['restaurant'] = self.get_restaurants(input['cuisine'], input['location'])
         places['transit'] = self.get_transit(input['location'])
         places['tourist'] = self.get_tourist('', input['location'])
-
-        #### TODO: save the result to cache
-
-        filtered = Engine.filtering(places)
-        flatData = Engine.covertFlat(filtered)
+        
+         #### TODO: save the result to cache
+        filtered = Engine.filtering(places, input['cuisine'], input['budget'], input['timings'])
+        ordered = Engine.ordering(filtered, input['origin'])
+        flatData = Engine.covertFlat(ordered)
 
         results = {}
         results['places'] = flatData

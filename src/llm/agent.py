@@ -19,6 +19,12 @@ def enrich_params(params):
     if params.get('timings', '') == '':
         params['timings'] = '07:00-20:00'
 
+    if params.get('distance') is None:
+        params['distance'] = 50
+    
+    if params.get('budget') is None:
+        params['budget'] = 'medium'
+
     params['mode_of_transport'] = 'DRIVING'
     if params.get('budget') == 'low':
         if params.get('no_of_people') <= 1:

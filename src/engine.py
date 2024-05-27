@@ -88,7 +88,7 @@ class Engine(object):
 
     
     @staticmethod
-    def covertFlat(data):
+    def flatten(data):
         flatData = []
 
         for row in data:

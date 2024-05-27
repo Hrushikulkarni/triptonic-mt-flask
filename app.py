@@ -4,6 +4,7 @@ from src.utils import load_secrets
 from flask_cors import CORS, cross_origin
 from src.data_loaders import DataLoader
 from src.link import MagicLink
+from src.utils import clean_google_maps_data, calculate_minmax_score
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -20,7 +21,11 @@ data_loader = DataLoader(maps_api_key=secrets['GOOGLE_MAPS_API_KEY'],
 @app.route("/hello")
 @cross_origin()
 def hello_world():
-    return "Hello, World!"
+    d = data_loader.get_tourist('', 'seattle')
+    r = clean_google_maps_data('restaurants', d)
+    return jsonify(r), 200
+    # return data_loader.get_tourist('', 'San Diego'), 200
+    # return "Hello, World!"
 
 @app.route('/prompt', methods=['POST'])
 @cross_origin()

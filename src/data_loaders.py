@@ -4,7 +4,7 @@ import requests
 from flask import jsonify
 import pymongo
 import concurrent.futures
-from .utils import get_top_10_places
+from .utils import get_top_n_places, clean_google_maps_data, calculate_minmax_score
 
 
 # Add the parent directory of 'src' to sys.path
@@ -40,16 +40,16 @@ class DataLoader(object):
         import time
         tic = time.time()
         places = {}
-        places['restaurant'] = self.get_restaurants(input['cuisine'], input['location'])
-        places['transit'] = self.get_transit(input['location'])
-        places['tourist'] = self.get_tourist('', input['location'])
+        places['restaurant'] = clean_google_maps_data('restaurant', self.get_restaurants(input['cuisine'], input['location']))
+        places['transit'] = clean_google_maps_data('transit', calculate_minmax_score(self.get_transit(input['location'])))
+        places['tourist'] = clean_google_maps_data('tourist', self.get_restaurants('', input['location']))
         tac = time.time()
-        print('PLACES:', places)
+        print('PLACES', places)
         print("Time to fetch places: {}".format(round(tac - tic, 2)))
 
         filtered = Engine.filtering(places, input['cuisine'], input['budget'], input['timings'])
         ordered = Engine.ordering(filtered, input['origin'])
-        flatData = Engine.covertFlat(ordered)
+        flatData = Engine.flatten(ordered)
 
         results = {}
         results['places'] = flatData
@@ -63,77 +63,62 @@ class DataLoader(object):
     def places(self):
         pass
 
-    def get_place_details(self, place_id):
+    def get_place_details(self, place):
+        place_id = place.get('place_id')
         response_data = self.places_cache.find_one({'place_id': place_id})
         if response_data is None:
             fields = 'current_opening_hours,serves_breakfast,serves_lunch,serves_brunch,serves_dinner,editorial_summary,website'
             url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={place_id}&fields={fields}&key={self.maps_api_key}"
             response = requests.get(url)
             details = response.json().get('result', {})
-            self.places_cache.insert_one({**details})
-            return details
+            enriched_place = { **place, **details }
+            self.places_cache.insert_one({**enriched_place})
+            return enriched_place
         return response_data
 
     def get_restaurants(self, cuisines, cities):
-        try:
-            query = f"{cuisines}+{cities}"
-            url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=restaurant&key={self.maps_api_key}"
-            response_data = self.mongo_collection.find_one({'url': url})
-            if response_data is None:
-                response = requests.get(url)
-                response_data = response.json()
-                results = response_data.get('results', [])
+        query = f"{cuisines}+{cities}"
+        url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=restaurant&key={self.maps_api_key}"
+        document = self.mongo_collection.find_one({'url': url})
+        if document is None:
+            response = requests.get(url)
+            response_data = response.json()
+            results = response_data.get('results', [])
 
-                # Filter for top 10 results here only
-                results = get_top_10_places(results)
+            # Filter for top 10 results here only
+            results = get_top_n_places(10, results)
 
-                place_ids = [place.get('place_id') for place in results]
-                detailed_places = []
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    futures = [executor.submit(self.get_place_details, place_id) for place_id in place_ids]
-                    for future in concurrent.futures.as_completed(futures):
-                        fields_data = future.result()
-                        detailed_places.append(fields_data)
-                response_data['results'] = detailed_places
-                self.mongo_collection.insert_one({'url': url, 'response': detailed_places})
-            else:
-                response_data = response_data['response']
-
-            return response_data
-        
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            detailed_places = []
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = [executor.submit(self.get_place_details, place) for place in results]
+                for future in concurrent.futures.as_completed(futures):
+                    fields_data = future.result()
+                    detailed_places.append(fields_data)
+            self.mongo_collection.insert_one({'url': url, 'response': detailed_places})
+            return detailed_places
+        return document['response']
 
     def get_tourist(self, neighborhood, cities):
-        try:
-            query = f"{neighborhood}+{cities}"
-            url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=tourist_attraction&key={self.maps_api_key}"
-            
-            response_data = self.mongo_collection.find_one({'url': url})
-            if response_data is None:
-                response = requests.get(url)
-                response_data = response.json()
-                results = response_data.get('results', [])
+        query = f"{neighborhood}+{cities}"
+        url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&type=tourist_attraction&key={self.maps_api_key}"
+        document = self.mongo_collection.find_one({'url': url})
+        if document is None:
+            response = requests.get(url)
+            response_data = response.json()
+            results = response_data.get('results', [])
 
-                # Filter for top 10 results here only
-                results = get_top_10_places(results)
+            # Filter for top 10 results here only
+            results = get_top_n_places(10, results)
 
-                place_ids = [place.get('place_id') for place in results]
-                detailed_places = []
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    futures = [executor.submit(self.get_place_details, place_id) for place_id in place_ids]
-                    for future in concurrent.futures.as_completed(futures):
-                        fields_data = future.result()
-                        detailed_places.append(fields_data)
-                response_data['results'] = detailed_places
-                self.mongo_collection.insert_one({'url': url, 'response': response_data})
-            else:
-                response_data = response_data['response']
-
-            return response_data
-
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            detailed_places = []
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = [executor.submit(self.get_place_details, place) for place in results]
+                for future in concurrent.futures.as_completed(futures):
+                    fields_data = future.result()
+                    detailed_places.append(fields_data)
+            self.mongo_collection.insert_one({'url': url, 'response': detailed_places})
+            return detailed_places
+        return document['response']
 
     def get_transit(self, cities):
         try:
@@ -144,6 +129,7 @@ class DataLoader(object):
             if response_data is None:
                 response = requests.get(url)
                 response_data = response.json()
+                response_data = response_data.get('results', [])
                 self.mongo_collection.insert_one({'url': url, 'response': response_data})
             else:
                 response_data = response_data['response']

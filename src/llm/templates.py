@@ -12,8 +12,6 @@ class Validation(BaseModel):
     )
 
 class TripParameters(BaseModel):
-    latitude: float = Field(description="Latitude coordinate of the location")
-    longitude: float = Field(description="Longitude coordinate of the location")
     location: str = Field(description="Comma separated locations list in the trip")
     duration: int = Field(description="Duration of the trip in days")
     origin: str = Field(description="Starting point of the trip")
@@ -35,62 +33,11 @@ class ValidationTemplate(object):
 
             A valid request should contain the following:
             - Few locations, should mention at least one
-            - A trip duration that is reasonable given the location(s), can be number of days
-            - Mode of transport
-            - Number of people involved in the trip
-            - Some other details, like the type of trip such as family/couple
-            - Some cuisine inferred from a food item
 
-            Any request that contains potentially harmful activities is not valid, regardless of what
-            other details are provided.
+            Any request that contains potentially harmful activities is not valid, regardless of what other details are provided.
 
-            If the request is not valid, set
-            plan_is_valid = 0
-
-            If the request seems reasonable, then set plan_is_valid = 1.
-
-            {format_instructions}
-        """
-
-        self.human_template = """
-            ####{query}####
-        """
-
-        self.parser = PydanticOutputParser(pydantic_object=Validation)
-
-        self.system_message_prompt = SystemMessagePromptTemplate.from_template(
-            self.system_template,
-            partial_variables={
-                "format_instructions": self.parser.get_format_instructions()
-            },
-        )
-        self.human_message_prompt = HumanMessagePromptTemplate.from_template(
-            self.human_template, input_variables=["query"]
-        )
-
-        self.chat_prompt = ChatPromptTemplate.from_messages(
-            [self.system_message_prompt, self.human_message_prompt]
-        )
-
-class ValidationTemplate(object):
-    def __init__(self):
-        self.system_template = """
-            You are a travel agent who helps users make exciting travel plans.
-
-            The user's request will be denoted by four hashtags. Determine if the user's
-            request is reasonable and achievable within the constraints they set.
-
-            A valid request should contain the following:
-            - Few locations, should mention at least one
-            - A trip duration that is reasonable given the location(s), can be number of days
-            - Mode of transport
-            - Number of people involved in the trip
-            - Some other details, like the type of trip such as family/couple
-            - Some cuisine inferred from a food item
-
-            Any request that contains potentially harmful activities is not valid, regardless of what
-            other details are provided.
-
+            For example you are supposed to set plan_is_valid = 0 for all the requests not pertaining to a travel request.
+            Additionally for unreasonable requests like "Fly me to the moon" or "I want to walk from India to USA" set plan_is_valid = 0 
             If the request is not valid, set
             plan_is_valid = 0
 
@@ -172,20 +119,21 @@ class ExtractParametersTemplate(object):
 
             A valid request should contain the following:
             - Few locations the user want to visit, should mention at least one
-            - Starting point of the trip should be present
+            - If origin as in the start of the location is not provided by the user, consider one of the location(s) of the trip as the origin. It should be a single location only.
             - A trip duration that is reasonable given the location(s), can be number of days
             - Mode of transport
             - Number of people involved in the trip
-            - Some other details, like the type of trip such as family/couple
-            - Some cuisine inferred from a food item
+            - Some other details, like the type of trip such as family/couple/friends
+            - Some cuisine inferred from a food item or any activity the user would want to do
 
             Your output should always contain a list of locations separated by comma, at least one. 
             It may contain the type of trip like family, couple, friends.
             It may contain the trip duration in days.
             It may contain the number of people involved in the trip.
-            It may contain mode of transport which can be either car, train, bus, airplane. If you can't infer the mode of transit, make a best guess given the trip location or the budget.
+            It may contain mode of transport which can be either "DRIVING", "BICYCLING", "WALKING" and "TRANSIT". If you can't infer the mode of transit, make a best guess given the trip location or the budget, but always give any of the above values only.
+
             It may contain a food item, from which you can infer cuisine or directly the cuisine will be mentioned.
-            It may contain attractions like museums, national parks, clubs, historical places, etc.
+            It may contain attractions like museums, national parks, clubs, historical places, give the values like park, museum, club (any of these values).
 
             For example:
 
@@ -196,7 +144,7 @@ class ExtractParametersTemplate(object):
 
             Output:
             {{  
-                "location": "San Diego",
+                "location": "San Diego, Irvine",
                 "origin" : "Irvine",
                 "duration": 2,
                 "no_of_people": 7,
@@ -212,30 +160,34 @@ class ExtractParametersTemplate(object):
             One observation is that places with suffix is usually not a actuall location.
             and cuisines will come some word like "cuisine" and "food", don't consider them as location.
 
-            mode_of_transport can be only one of the following options: "car", "train", "bus", "airplane".
+            budget would have any of the following values - low, medium, high. Consider default value as "medium"
+
+            mode_of_transport can be only one of the following options: "DRIVING", "BICYCLING", "WALKING" and "TRANSIT", these values should all be in uppercase.
+
             type_of_trip can be only one of the following options: "family", "friends", "couple".
             these values should all be in lowercase.
 
             timings will be a range of time in HH:MM 24Hr format.
             
-            origin stores the starting point of the trip.
+            origin stores the starting point of the trip, if origin is not provided, consider one of the location as origin. DO NOT, I REPEAT DO NOT send null or None origin.
 
             For rest of the parameters, make the best guess based on the trip location and other parameters.
 
-            the ouput must contain every parameter: location, origin, duration, no_of_people, mode_of_transport, type_of_trip, cuisine, attractions
+            the output must contain every parameter: location, origin, duration, no_of_people, mode_of_transport, type_of_trip, cuisine, attractions
             and it must not be null, have these default values:
             mode_of_transports: car
-            type_of_trips: family
-            attractions: park
-            cuisines: italian
+            type_of_trips: friends
+            attractions: cafe
+            cuisine: indian
             no_of_people: 2
-            budget: 500
+            budget: medium
             duration: 2
             timings: 9:00-20:00
 
 
             Also, if in prompt, food items like pizza or pasta is mentioned then it's cuisine will be "italian", not pizza and pasta
-            similar is sushi is mentioned, then it's cuisine will be japanese.
+            similarly if sushi is mentioned, then it's cuisine will be japanese.
+            Also consider contextual cues like "reading manga" to be japanese cuisine and stuff like that.
         """
 
         self.human_template = """

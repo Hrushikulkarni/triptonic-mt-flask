@@ -25,11 +25,15 @@ def hello_world():
 @app.route('/prompt', methods=['POST'])
 @cross_origin()
 def prompt():
+    import time
     try:
+        tic = time.time()
         data = request.get_json()
         prompt_text = data.get('prompt')
-        return data_loader.prompt(prompt_text)
-
+        output = data_loader.prompt(prompt_text)
+        tac = time.time()
+        print("Time to process prompt: {}".format(round(tac - tic, 2)))
+        return output
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     

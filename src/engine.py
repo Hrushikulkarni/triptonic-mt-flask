@@ -28,11 +28,14 @@ class Engine(object):
             place_lng = place['geometry']['location']['lng']
             return calculate_distance(user_lat, user_lng, place_lat, place_lng)
 
+        print('HUH')
         restaurants = data.get('restaurant', {}).get('results', [])
         restaurants.sort(key=lambda r: calculate_place_distance(r))
+        print('RETAURANT')
 
         tourist_places = data.get('tourist', {}).get('results', [])
         tourist_places.sort(key=lambda t: calculate_place_distance(t))
+        print('TOURIT   ')
 
         # Combine the ordered restaurants and tourist places
         ordered_data = {

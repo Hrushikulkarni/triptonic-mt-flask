@@ -100,7 +100,11 @@ class Agent(object):
                 "format_instructions": self.validation_prompt.parser.get_format_instructions(),
             }
         )
-
+        is_request_valid = validation_result['validation_output'].plan_is_valid
+        print('Validation object:', validation_result['validation_output'])
+        if is_request_valid == 'no':
+            raise ValueError('UNREASONABLE_REQUEST')
+        
         validation_test = validation_result["agent_suggestion"]
         output = json.loads(validation_test.strip())
         t2 = time.time()

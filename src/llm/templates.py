@@ -11,18 +11,6 @@ class Validation(BaseModel):
         description="This field is 'yes' if the plan is feasible, 'no' otherwise"
     )
 
-class TripParameters(BaseModel):
-    location: str = Field(description="Comma separated locations list in the trip")
-    duration: int = Field(description="Duration of the trip in days")
-    origin: str = Field(description="Starting point of the trip")
-    no_of_people: int = Field(description="Number of people involved in the trip")
-    mode_of_transport: str = Field(description="Mode of transport such as car, train, bus, airplane")
-    type_of_trip: str = Field(description="Trip type such as family, couple")
-    cuisine: str = Field(description="Based on the food items mentioned, infer cuisine.")
-    budget: float = Field(description="Total budget of the entire trip")
-    timings: str = Field(description="Daily timings for travel")
-    attraction: str = Field(description="Tourist attractions like museums, national parks, historical places, etc.")
-
 class ValidationTemplate(object):
     def __init__(self):
         self.system_template = """
@@ -66,50 +54,6 @@ class ValidationTemplate(object):
             [self.system_message_prompt, self.human_message_prompt]
         )
 
-class ValidateFilteringTemplate(object):
-    def __init__(self):
-        self.system_template = """
-            You are a travel agent who helps users make exciting travel plans.
-
-            The user's request will be denoted by four hashtags. Determine if the user's
-            request is reasonable and achievable within the constraints they set.
-
-           Your output should be valid if it contains: 
-            - the longitude and lattitude coordinated of the restaurant or tourist place.
-            - the longitudeDelta and latitudeDelta.
-            - the icon of the place.
-            - the name of the place
-            - the visiting time of the place and the day of the trip when the user should visit that location.
-            - the budget for visiting that place.
-
-            If the request is not valid, set
-            plan_is_valid = 0
-
-            If the request seems reasonable, then set plan_is_valid = 1.
-
-            {format_instructions}
-        """
-
-        self.human_template = """
-            ####{query}####
-        """
-
-        self.parser = PydanticOutputParser(pydantic_object=Validation)
-
-        self.system_message_prompt = SystemMessagePromptTemplate.from_template(
-            self.system_template,
-            partial_variables={
-                "format_instructions": self.parser.get_format_instructions()
-            },
-        )
-        self.human_message_prompt = HumanMessagePromptTemplate.from_template(
-            self.human_template, input_variables=["query"]
-        )
-
-        self.chat_prompt = ChatPromptTemplate.from_messages(
-            [self.system_message_prompt, self.human_message_prompt]
-        )
-
 class ExtractParametersTemplate(object):
     def __init__(self):
         self.system_template = """
@@ -125,6 +69,7 @@ class ExtractParametersTemplate(object):
             - Number of people involved in the trip
             - Some other details, like the type of trip such as family/couple/friends
             - Some cuisine inferred from a food item or any activity the user would want to do
+            - Distance radius within which the user wishes to travel in miles, default it to 50.
 
             Your output should always contain a list of locations separated by comma, at least one. 
             It may contain the type of trip like family, couple, friends.
@@ -153,7 +98,8 @@ class ExtractParametersTemplate(object):
                 "type_of_trip": "friends",
                 "cuisine": "mexican, indian",
                 "timings": "9:00-18:00",
-                "attractions": "cafe"
+                "attractions": "cafe",
+                "distance": 50
             }}
 
             In the example above "mexican" and "indian" are cuisines, not a location.
@@ -173,7 +119,7 @@ class ExtractParametersTemplate(object):
 
             For rest of the parameters, make the best guess based on the trip location and other parameters.
 
-            the output must contain every parameter: location, origin, duration, no_of_people, mode_of_transport, type_of_trip, cuisine, attractions
+            the output must contain every parameter: location, origin, duration, no_of_people, mode_of_transport, type_of_trip, cuisine, attractions, distance
             and it must not be null, have these default values:
             mode_of_transports: car
             type_of_trips: friends
@@ -183,6 +129,7 @@ class ExtractParametersTemplate(object):
             budget: medium
             duration: 2
             timings: 9:00-20:00
+            distance: 50
 
 
             Also, if in prompt, food items like pizza or pasta is mentioned then it's cuisine will be "italian", not pizza and pasta
@@ -205,78 +152,180 @@ class ExtractParametersTemplate(object):
             [self.system_message_prompt, self.human_message_prompt]
         )
 
-class FilteringTemplate(object):
+class FilterAndOrderingTemplate(object):
     def __init__(self):
         self.system_template = """
             You are a travel agent who helps users make exciting travel plans.
 
-            The user's request will be denoted by four hashtags. This request should be valid.
+            The user's request will be denoted by four hashtags. It will have a list of JSON objects indicating details about the places and another parameter object that you will use to filter and order to create the perfect itinerary.
 
-            A valid request should contain the following:
-            - Location of the trip
-            - A trip duration that is reasonable given the location(s), can be number of days
-            - Budget of the trip
-            - Daily timings of travel
-            - Origin of the trip
-            - Mode of transport
-            - Number of people involved in the trip
-            - Some other details, like the type of trip such as family/couple
-            - Some cuisine inferred from a food item
+            Consider below rules to do the FILTERING of the list of JSON objects:
+            - Based on the "mode_of_transport" defined in the parameter object select places suitable for the same, such as if its WALKING, BIKING, select places that are close-by or have a bike lane. Similarly if it's DRIVING, you can consider places that are a little farther apart. If it's TRANSIT, then ensure all the places are nearby transit places/locations.
+            - Based on the "description" of the place's JSON object (if there is any), see if it semantically matches with the "attractions" passed in the parameter object and filter those restaurant/tourist places.
+            - Based on the "description" of the place's JSON object (if there is any), see if it semantically matches with the "type_of_trip" passed in the parameter object and select those restaurant/tourist places.
+            - Based on the "price_range" of the place's JSON object, select appropriate restaurant/tourist places that suit the"type_of_trip" passed in the parameter object.
+            - WITHOUT FAIL, ensure that you should not filter out a lot of places, based on the "duration" in the parameter object, if it's a one day trip have at least 4 places in the output, two day trip have at least 8 places in the output, for three day trip have at least 10 places in the output, so on and so forth.
 
-            Your output should always contain a list of locations separated by comma, at least one. 
-            It may contain the longitude and lattitude coordinated of the restaurant or tourist place.
-            It may contain the longitudeDelta and latitudeDelta.
-            It may contain the icon of the place.
-            It may contain the name of the place
-            It may contain the visiting time of the place and the day of the trip when the user should visit that location.
-            It may contain the budget for visiting that place.
+            Consider below rules to do the ORDERING of the list of JSON objects:
+            - Order "restaurant" and "tourist" type places based on what they serve, like if they serve breakfast, consider those early in the day and so on for other serves like lunch, brunch and dinner.
+            
+            Finally you have to add two attributes to the place's JSON object, they are:
+            "day": 1 (it is a number)
+            "time": "14:00" (it is in 24 hour format)
+            The rules to add these attributes are:
+            - Based on the "duration" attribute in the parameter object passed by the user, distribute the places from the JSON object list that we have ordered so far into specific days and give an ideal time to visit that place. Ensure that the day attribute value is less than the "duration" and the time is in 24 hour format.
 
-            For example:
+            For example for the user prompt below:
 
             ####
-            'location': 'Irvine', 'origin': 'Los Angeles', 'duration': 2, 'no_of_people': 5, 'budget': 'tight', 'mode_of_transport': 'car', 'type_of_trip': 'family', 'cuisine': 'italian', 'timings': '06:00-17:00', 'attractions': 'historical places'
+            [{{
+                "business_status": "OPERATIONAL",
+                "description": "Small, cozy dinner spot with framed photos covering the walls serving classic Italian comfort food.",
+                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png",
+                "id": "ChIJ8TFl3M0sDogRlO3_4QWlWVE",
+                "latitude": 41.891066,
+                "latitudeDelta": 1,
+                "longitude": -87.6468314,
+                "longitudeDelta": 1,
+                "name": "La Scarola",
+                "notes": "Notes...",
+                "price_range": 2,
+                "rating": 4.7,
+                "serves": [
+                    "lunch"
+                ],
+                "todays_working_hours": "4:00 AM - 10:00 PM",
+                "total_reviews": 1687,
+                "type": "restaurant",
+                "website": "http://www.lascarola.com/"
+            }},
+            {{
+                "business_status": "OPERATIONAL",
+                "description": "",
+                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/generic_business-71.png",
+                "id": "ChIJr9gxmVLTD4gR3ZORqBIh9jo",
+                "latitude": 41.8967801,
+                "latitudeDelta": 1,
+                "longitude": -87.6279205,
+                "longitudeDelta": 1,
+                "name": "Chicago",
+                "notes": "Notes...",
+                "price_range": 2,
+                "rating": 4.2,
+                "serves": [],
+                "todays_working_hours": "10:00 AM - 06:00 PM",
+                "total_reviews": 77,
+                "type": "transit",
+                "website": ""
+            }},
+            {{
+                "business_status": "OPERATIONAL",
+                "description": "Relaxed, stylish restaurant & bar near the United Center featuring upscale Italian-American cuisine.",
+                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png",
+                "id": "ChIJvS_32SYtDogR2UwKCEiOpw0",
+                "latitude": 41.8815596,
+                "latitudeDelta": 1,
+                "longitude": -87.65316159999999,
+                "longitudeDelta": 1,
+                "name": "Viaggio Restaurant Chicago",
+                "notes": "Notes...",
+                "price_range": 2,
+                "rating": 4.7,
+                "serves": ["lunch"],
+                "todays_working_hours": "4:00 AM - 9:00 PM",
+                "total_reviews": 748,
+                "type": "tourist",
+                "website": "https://www.viaggiochicago.com/"
+            }}]
+            PARAMETER {{
+                "attractions": "cafe",
+                "budget": "medium",
+                "cuisine": "italian",
+                "distance": 50,
+                "duration": 2,
+                "location": "Chicago",
+                "mode_of_transport": "DRIVING",
+                "no_of_people": 2,
+                "origin": "Chicago",
+                "timings": "9:00-20:00",
+                "type_of_trip": "friends"
+            }}
             #####
 
             Output:
-            [
-                {{
-                    "latitude": 33.670339,
-                    "longitude": -117.788647,
-                    "latitudeDelta": 1,
-                    "longitudeDelta": 1,
-                    "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png",
-                    "name": "California Pizza Kitchen at Alton Square",
-                    "time": "4:00 PM",
-                    "budget": 50,
-                    "day": 1
-                    
-                }}
-            ]
+            [{{
+                "day": 1,
+                "business_status": "OPERATIONAL",
+                "description": "Relaxed, stylish restaurant & bar near the United Center featuring upscale Italian-American cuisine.",
+                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png",
+                "id": "ChIJvS_32SYtDogR2UwKCEiOpw0",
+                "latitude": 41.8815596,
+                "latitudeDelta": 1,
+                "longitude": -87.65316159999999,
+                "longitudeDelta": 1,
+                "name": "Viaggio Restaurant Chicago",
+                "notes": "Notes...",
+                "price_range": 2,
+                "rating": 4.7,
+                "serves": ["lunch"],
+                "todays_working_hours": "4:00 AM - 9:00 PM",
+                "total_reviews": 748,
+                "type": "tourist",
+                "website": "https://www.viaggiochicago.com/",
+                "time": "13:30"
+            }},
+            {{
+                "day": 2,
+                "business_status": "OPERATIONAL",
+                "description": "",
+                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/generic_business-71.png",
+                "id": "ChIJr9gxmVLTD4gR3ZORqBIh9jo",
+                "latitude": 41.8967801,
+                "latitudeDelta": 1,
+                "longitude": -87.6279205,
+                "longitudeDelta": 1,
+                "name": "Chicago",
+                "notes": "Notes...",
+                "price_range": 2,
+                "rating": 4.2,
+                "serves": [],
+                "todays_working_hours": "10:00 AM - 06:00 PM",
+                "total_reviews": 77,
+                "type": "transit",
+                "website": "",
+                "time": "11:00"
+            }},
+            {{
+                "day": 2,
+                "business_status": "OPERATIONAL",
+                "description": "Small, cozy dinner spot with framed photos covering the walls serving classic Italian comfort food.",
+                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png",
+                "id": "ChIJ8TFl3M0sDogRlO3_4QWlWVE",
+                "latitude": 41.891066,
+                "latitudeDelta": 1,
+                "longitude": -87.6468314,
+                "longitudeDelta": 1,
+                "name": "La Scarola",
+                "notes": "Notes...",
+                "price_range": 2,
+                "rating": 4.7,
+                "serves": [
+                    "dinner"
+                ],
+                "todays_working_hours": "4:00 AM - 10:00 PM",
+                "total_reviews": 1687,
+                "type": "restaurant",
+                "website": "http://www.lascarola.com/",
+                "time": "18:00"
+            }}]
 
-
-
-            latitude and longitude should be the lattitude and longitude coordinates of the location of the individual place in name.
-
-            budget is the cost of visiting that place.
-
-            name is the name of that tourist spot/ restaurant.
-
-            time is the time of arrival. day refers to the day of the trip when the user should visit this place. photos contains the images of that place, height and width contain the height and width of the image.
-
-            html attributions contains the google maps link of the place along with a photo reference.
-
-            the ouput must contain every parameter: latitude, longitude, latitudeDelta, longitudeDelta, icon, name, time, day, budget.
-
-            time should be in HH:MM format and day should be numeric.
-
-            Also, latitude and longitude should be of the google maps location of the place.
+            Without fail ensure your output is a list of JSON objects having all the previous fields and the two newly added fields for "day" and "time". Ensure property names have double quotes and not single quotes. Ensure that the number of objects in the JSON list do not go below 5 for the generated trip.
         """
 
         self.human_template = """
             ####{query}####
         """
 
-        self.parser = PydanticOutputParser(pydantic_object=Validation)
         self.system_message_prompt = SystemMessagePromptTemplate.from_template(
             self.system_template,
         )
@@ -287,5 +336,3 @@ class FilteringTemplate(object):
         self.chat_prompt = ChatPromptTemplate.from_messages(
             [self.system_message_prompt, self.human_message_prompt]
         )
-
-

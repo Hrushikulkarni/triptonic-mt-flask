@@ -24,6 +24,7 @@ class DataLoader(object):
         self.mongo_collection = pymongo.collection.Collection(mongo_db, 'GoogleMapsAPI')
         self.places_cache = pymongo.collection.Collection(mongo_db, 'PlacesCache')
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=20)
+        self.engine = Engine()
 
     def extract_params(self, query):
         travel_agent = Agent(google_gemini_key=self.gemini_api_key, debug=True)
@@ -39,20 +40,22 @@ class DataLoader(object):
 
         import time
         tic = time.time()
-        places = {}
+        places = {} 
         places['restaurant'] = clean_google_maps_data('restaurant', self.get_restaurants(input['cuisine'], input['location']))
         places['transit'] = clean_google_maps_data('transit', calculate_minmax_score(self.get_transit(input['location'])))
         places['tourist'] = clean_google_maps_data('tourist', self.get_restaurants('', input['location']))
         tac = time.time()
-        print('PLACES', places)
+        print('Total restaurants:', len(places['restaurant']))
+        print('Total transits:', len(places['transit']))
+        print('Total tourists:', len(places['tourist']))
         print("Time to fetch places: {}".format(round(tac - tic, 2)))
-
-        filtered = Engine.filtering(places, input['cuisine'], input['budget'], input['timings'])
-        ordered = Engine.ordering(filtered, input['origin'])
-        flatData = Engine.flatten(ordered)
+        data = self.engine.filter(places, input)
+        print('After filtering length:', len(data))
+        data = self.engine.order(data, input)
+        print('After filtering length:', len(data))
 
         results = {}
-        results['places'] = flatData
+        results['places'] = data
         results['prompt'] = params
         return jsonify(results)
     

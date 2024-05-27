@@ -2,8 +2,7 @@ import json
 from langchain.chains import LLMChain, SequentialChain
 from langchain_google_genai import GoogleGenerativeAI
 from .templates import (
-    FilteringTemplate,
-    ValidateFilteringTemplate,
+    FilterAndOrderingTemplate,
     ValidationTemplate,
     ExtractParametersTemplate
 )
@@ -12,6 +11,26 @@ import logging
 import time
 
 logging.basicConfig(level=logging.INFO)
+
+def enrich_params(params):
+    print('Enriching params:', params)
+    if params.get('origin') is None:
+        params['origin'] = params['location'].split(', ')[0]
+    if params.get('timings', '') == '':
+        params['timings'] = '07:00-20:00'
+
+    params['mode_of_transport'] = 'DRIVING'
+    if params.get('budget') == 'low':
+        if params.get('no_of_people') <= 1:
+            params['mode_of_transport'] = 'WALKING'
+        elif params.get('no_of_people') < 4:
+            params['mode_of_transport'] = 'BIKING'
+    if params.get('budget') == 'medium':
+        if params.get('no_of_people') <= 4:
+            params['mode_of_transport'] = 'TRANSIT'
+    
+    print('Enriched params:', params)
+    return params
 
 class Agent(object):
     def __init__(
@@ -27,11 +46,26 @@ class Agent(object):
 
         self.chat_model = GoogleGenerativeAI(model=model, temperature=temperature, google_api_key=self._openai_key)
         self.validation_prompt = ValidationTemplate()
-        self.validate_filter = ValidateFilteringTemplate()
         self.extract_parameters_prompt = ExtractParametersTemplate()
-        self.filtering_locations = FilteringTemplate()
+        self.generate_trip_prompt = FilterAndOrderingTemplate()
         self.validation_chain = self._set_up_validation_chain(debug)
-        self.validation_chain_for_filtering = self._set_up_validation_for_filtering(debug)
+        self.generate_trip_chain = self._set_up_generate_trip_chain(debug)
+
+    def _set_up_generate_trip_chain(self, debug=True):
+        travel_agent = LLMChain(
+            llm=self.chat_model,
+            prompt=self.generate_trip_prompt.chat_prompt,
+            verbose=debug,
+            output_key="agent_suggestion",
+        )
+        overall_chain = SequentialChain(
+            chains=[travel_agent],
+            input_variables=["query"],
+            output_variables=["agent_suggestion"],
+            verbose=debug,
+        )
+
+        return overall_chain        
 
     def _set_up_validation_chain(self, debug=True):
       
@@ -60,31 +94,29 @@ class Agent(object):
         )
 
         return overall_chain
-    
-    def _set_up_validation_for_filtering(self, debug=True):
-         filtering_agent = LLMChain(
-            llm=self.chat_model,
-            prompt=self.validate_filter.chat_prompt,
-            output_parser=self.validate_filter.parser,
-            output_key="validation_output",
-            verbose=debug,
-        )
 
-         travel_agent = LLMChain(
-            llm=self.chat_model,
-            prompt=self.filtering_locations.chat_prompt,
-            verbose=debug,
-            output_key="agent_suggestion",
+    def generate_trip(self, query):
+        t1 = time.time()
+        self.logger.info(
+            "Calling Generate Trip (model is {}) on user input".format(
+                self.chat_model.model
             )
-
-         overall_chain_for_filtering = SequentialChain(
-            chains=[filtering_agent, travel_agent],
-            input_variables=["query",  "format_instructions"],
-            output_variables=["validation_output","agent_suggestion"],
-            verbose=debug,
         )
+        response = self.generate_trip_chain(
+            {
+                "query": query,
+            }
+        )
+        trip = response["agent_suggestion"]
+        print('### START')
+        trip = trip.strip().replace("'", '"')
+        print(trip)
+        print('### END')
+        t2 = time.time()
+        output = json.loads(trip)
+        self.logger.info("Time to generate trip request: {}".format(round(t2 - t1, 2)))
 
-         return overall_chain_for_filtering
+        return output
 
     def validate_travel(self, query):
         self.logger.info("Validating query")
@@ -107,31 +139,9 @@ class Agent(object):
         
         validation_test = validation_result["agent_suggestion"]
         output = json.loads(validation_test.strip())
+        output = enrich_params(output)
+            
         t2 = time.time()
         self.logger.info("Time to validate request: {}".format(round(t2 - t1, 2)))
 
         return output
-    
-    def validate_filtering(self, query):
-        self.logger.info("Filtering locations")
-        t1 = time.time()
-        self.logger.info(
-            "Calling Filtering and ordering (model is {}) on user input".format(
-                self.chat_model.model
-            )
-        )
-        filtering_result = self.validation_chain_for_filtering(
-            {
-                "query": query,
-                "format_instructions": self.validate_filter.parser.get_format_instructions()
-            }
-        )
-
-        filtering_test = filtering_result["agent_suggestion"]
-        self.logger.info("Filtering_test: %s", filtering_test)
-        output = json.loads(filtering_test.strip())
-        t2 = time.time()
-        self.logger.info("Time to validate request: {}".format(round(t2 - t1, 2)))
-
-        return output
-

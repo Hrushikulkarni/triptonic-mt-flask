@@ -103,7 +103,6 @@ def clean_google_maps_data(place_type, places):
       'type': place_type,
       'name': place.get('name', ''),
       'website': place.get('website', ''),
-      'icon': place.get('icon', ''),
       'description': place.get('editorial_summary', {}).get('overview', ''),
       'latitude': place.get('geometry', {}).get('location', {}).get('lat', 0),
       'longitude': place.get('geometry', {}).get('location', {}).get('lng', 0),
@@ -214,3 +213,8 @@ def duration_places_count(duration):
   elif duration <= 3:
     return 12
   return 20
+
+def stats_printer(places):
+  print('Total restaurant places:', len([p for p in places if p['type'] == 'restaurant']))
+  print('Total tourist places:', len([p for p in places if p['type'] == 'tourist']))
+  print('Total transit places:', len([p for p in places if p['type'] == 'transit']))

@@ -25,6 +25,9 @@ def enrich_params(params):
     if params.get('budget') is None:
         params['budget'] = 'medium'
 
+    if params.get('mode_of_transport') == 'BIKING':
+        params['mode_of_transport'] = 'BICYCLING'
+
     params['mode_of_transport'] = 'DRIVING'
     if params.get('budget') == 'low':
         if params.get('no_of_people') <= 1:

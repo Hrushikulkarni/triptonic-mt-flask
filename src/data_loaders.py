@@ -4,7 +4,7 @@ import requests
 from flask import jsonify
 import pymongo
 import concurrent.futures
-from .utils import get_top_n_places, clean_google_maps_data, calculate_minmax_score
+from .utils import get_top_n_places, clean_google_maps_data, calculate_minmax_score, stats_printer
 
 
 # Add the parent directory of 'src' to sys.path
@@ -42,8 +42,8 @@ class DataLoader(object):
         tic = time.time()
         places = {} 
         places['restaurant'] = clean_google_maps_data('restaurant', self.get_restaurants(input['cuisine'], input['location']))
-        places['transit'] = clean_google_maps_data('transit', calculate_minmax_score(self.get_transit(input['location'])))
-        places['tourist'] = clean_google_maps_data('tourist', self.get_restaurants('', input['location']))
+        places['transit'] = clean_google_maps_data('transit', calculate_minmax_score(self.get_transit(input['location'])[:10]))
+        places['tourist'] = clean_google_maps_data('tourist', self.get_tourist('', input['location']))
         tac = time.time()
         print('Total restaurants:', len(places['restaurant']))
         print('Total transits:', len(places['transit']))
@@ -51,8 +51,10 @@ class DataLoader(object):
         print("Time to fetch places: {}".format(round(tac - tic, 2)))
         data = self.engine.filter(places, input)
         print('After filtering length:', len(data))
+        stats_printer(data)
         data = self.engine.order(data, input)
-        print('After filtering length:', len(data))
+        print('After ordering length:', len(data))
+        stats_printer(data)
 
         results = {}
         results['places'] = data

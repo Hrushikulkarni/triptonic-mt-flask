@@ -160,14 +160,25 @@ class FilterAndOrderingTemplate(object):
             The user's request will be denoted by four hashtags. It will have a list of JSON objects indicating details about the places and another parameter object that you will use to filter and order to create the perfect itinerary.
 
             Consider below rules to do the FILTERING of the list of JSON objects:
-            - Based on the "mode_of_transport" defined in the parameter object select places suitable for the same, such as if its WALKING, BIKING, select places that are close-by or have a bike lane. Similarly if it's DRIVING, you can consider places that are a little farther apart. If it's TRANSIT, then ensure all the places are nearby transit places/locations.
-            - Based on the "description" of the place's JSON object (if there is any), see if it semantically matches with the "attractions" passed in the parameter object and filter those restaurant/tourist places.
-            - Based on the "description" of the place's JSON object (if there is any), see if it semantically matches with the "type_of_trip" passed in the parameter object and select those restaurant/tourist places.
-            - Based on the "price_range" of the place's JSON object, select appropriate restaurant/tourist places that suit the"type_of_trip" passed in the parameter object.
-            - WITHOUT FAIL, ensure that you should not filter out a lot of places, based on the "duration" in the parameter object, if it's a one day trip have at least 4 places in the output, two day trip have at least 8 places in the output, for three day trip have at least 10 places in the output, so on and so forth.
+            - Maintain exact number of places based on the trip "duration":
+                One day trip: 5 places
+                Two day trip: 9 places
+                Three day trip: 12 places and so on
+            - Per day atleast 2 "tourist" type places should be present.
+            - Include all of the type "tourist", "restaurant" and "transit".
+            - The total count of "transit" type places should not exceed the count of "tourist" type places.
+            - Select places suitable for the "mode_of_transport":
+                WALKING/BIKING: Choose close-by places or those with bike lanes.
+                DRIVING: Include places that can be farther apart.
+                TRANSIT: Ensure places are near transit locations.
+            - Match the "description" of places with the "attractions" in the parameters.
+            - Match the "description" of places with the "type_of_trip" in the parameters.
+            - Select restaurants/tourist places based on the "price_range" suitable for the "type_of_trip".
 
             Consider below rules to do the ORDERING of the list of JSON objects:
-            - Order "restaurant" and "tourist" type places based on what they serve, like if they serve breakfast, consider those early in the day and so on for other serves like lunch, brunch and dinner.
+            - Plan an itinerary for a day trip that includes at least two "tourist" type places. If it's a two-day trip, include at least four "tourist" type places, and so on.
+            - Make sure that the number of "tourist" type places is more than the number of "transit" and "restaurant" type places.
+            - No more than 5 places in total per day and no 2 locations at a same time of the day.
             
             Finally you have to add two attributes to the place's JSON object, they are:
             "day": 1 (it is a number)
@@ -176,67 +187,9 @@ class FilterAndOrderingTemplate(object):
             - Based on the "duration" attribute in the parameter object passed by the user, distribute the places from the JSON object list that we have ordered so far into specific days and give an ideal time to visit that place. Ensure that the day attribute value is less than the "duration" and the time is in 24 hour format.
 
             For example for the user prompt below:
-
+            I am providing the minified JSON in this example
             ####
-            [{{
-                "business_status": "OPERATIONAL",
-                "description": "Small, cozy dinner spot with framed photos covering the walls serving classic Italian comfort food.",
-                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png",
-                "id": "ChIJ8TFl3M0sDogRlO3_4QWlWVE",
-                "latitude": 41.891066,
-                "latitudeDelta": 1,
-                "longitude": -87.6468314,
-                "longitudeDelta": 1,
-                "name": "La Scarola",
-                "notes": "Notes...",
-                "price_range": 2,
-                "rating": 4.7,
-                "serves": [
-                    "lunch"
-                ],
-                "todays_working_hours": "4:00 AM - 10:00 PM",
-                "total_reviews": 1687,
-                "type": "restaurant",
-                "website": "http://www.lascarola.com/"
-            }},
-            {{
-                "business_status": "OPERATIONAL",
-                "description": "",
-                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/generic_business-71.png",
-                "id": "ChIJr9gxmVLTD4gR3ZORqBIh9jo",
-                "latitude": 41.8967801,
-                "latitudeDelta": 1,
-                "longitude": -87.6279205,
-                "longitudeDelta": 1,
-                "name": "Chicago",
-                "notes": "Notes...",
-                "price_range": 2,
-                "rating": 4.2,
-                "serves": [],
-                "todays_working_hours": "10:00 AM - 06:00 PM",
-                "total_reviews": 77,
-                "type": "transit",
-                "website": ""
-            }},
-            {{
-                "business_status": "OPERATIONAL",
-                "description": "Relaxed, stylish restaurant & bar near the United Center featuring upscale Italian-American cuisine.",
-                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png",
-                "id": "ChIJvS_32SYtDogR2UwKCEiOpw0",
-                "latitude": 41.8815596,
-                "latitudeDelta": 1,
-                "longitude": -87.65316159999999,
-                "longitudeDelta": 1,
-                "name": "Viaggio Restaurant Chicago",
-                "notes": "Notes...",
-                "price_range": 2,
-                "rating": 4.7,
-                "serves": ["lunch"],
-                "todays_working_hours": "4:00 AM - 9:00 PM",
-                "total_reviews": 748,
-                "type": "tourist",
-                "website": "https://www.viaggiochicago.com/"
-            }}]
+            [{{"business_status":"OPERATIONAL","description":"Small, cozy dinner spot with framed photos covering the walls serving classic Italian comfort food.","id":"ChIJ8TFl3M0sDogRlO3_4QWlWVE","latitude":41.891066,"latitudeDelta":1,"longitude":-87.6468314,"longitudeDelta":1,"name":"La Scarola","notes":"Notes...","price_range":2,"rating":4.7,"serves":["lunch"],"todays_working_hours":"4:00 AM - 10:00 PM","total_reviews":1687,"type":"tourist","website":"http://www.lascarola.com/"}},{{"business_status":"OPERATIONAL","description":"Small, cozy dinner spot with framed photos covering the walls serving classic Italian comfort food.","icon":"https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png","id":"ChIJ8TFl3M0sDogRlO3_4QWlWVE","latitude":41.891066,"latitudeDelta":1,"longitude":-87.6468314,"longitudeDelta":1,"name":"La Scarola","notes":"Notes...","price_range":2,"rating":4.7,"serves":[],"todays_working_hours":"4:00 AM - 10:00 PM","total_reviews":1687,"type":"restaurent","website":"http://www.lascarola.com/"}},{{"business_status":"OPERATIONAL","description":"","icon":"https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/generic_business-71.png","id":"ChIJr9gxmVLTD4gR3ZORqBIh9jo","latitude":41.8967801,"latitudeDelta":1,"longitude":-87.6279205,"longitudeDelta":1,"name":"Chicago","notes":"Notes...","price_range":2,"rating":4.2,"serves":[],"todays_working_hours":"10:00 AM - 06:00 PM","total_reviews":77,"type":"transit","website":""}},{{"business_status":"OPERATIONAL","description":"","icon":"https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/generic_business-71.png","id":"ChIJr9gxmVLTD4gR3ZORqBIh9jo","latitude":41.8967801,"latitudeDelta":1,"longitude":-87.6279205,"longitudeDelta":1,"name":"Chicago","notes":"Notes...","price_range":2,"rating":4.2,"serves":[],"todays_working_hours":"10:00 AM - 06:00 PM","total_reviews":77,"type":"tourist","website":""}},{{"business_status":"OPERATIONAL","description":"Relaxed, stylish restaurant & bar near the United Center featuring upscale Italian-American cuisine.","icon":"https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png","id":"ChIJvS_32SYtDogR2UwKCEiOpw0","latitude":41.8815596,"latitudeDelta":1,"longitude":-87.65316159999999,"longitudeDelta":1,"name":"Viaggio Restaurant Chicago","notes":"Notes...","price_range":2,"rating":4.7,"serves":["lunch"],"todays_working_hours":"4:00 AM - 9:00 PM","total_reviews":748,"type":"tourist","website":"https://www.viaggiochicago.com/"}}]
             PARAMETER {{
                 "attractions": "cafe",
                 "budget": "medium",
@@ -253,72 +206,10 @@ class FilterAndOrderingTemplate(object):
             #####
 
             Output:
-            [{{
-                "day": 1,
-                "business_status": "OPERATIONAL",
-                "description": "Relaxed, stylish restaurant & bar near the United Center featuring upscale Italian-American cuisine.",
-                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png",
-                "id": "ChIJvS_32SYtDogR2UwKCEiOpw0",
-                "latitude": 41.8815596,
-                "latitudeDelta": 1,
-                "longitude": -87.65316159999999,
-                "longitudeDelta": 1,
-                "name": "Viaggio Restaurant Chicago",
-                "notes": "Notes...",
-                "price_range": 2,
-                "rating": 4.7,
-                "serves": ["lunch"],
-                "todays_working_hours": "4:00 AM - 9:00 PM",
-                "total_reviews": 748,
-                "type": "tourist",
-                "website": "https://www.viaggiochicago.com/",
-                "time": "13:30"
-            }},
-            {{
-                "day": 2,
-                "business_status": "OPERATIONAL",
-                "description": "",
-                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/generic_business-71.png",
-                "id": "ChIJr9gxmVLTD4gR3ZORqBIh9jo",
-                "latitude": 41.8967801,
-                "latitudeDelta": 1,
-                "longitude": -87.6279205,
-                "longitudeDelta": 1,
-                "name": "Chicago",
-                "notes": "Notes...",
-                "price_range": 2,
-                "rating": 4.2,
-                "serves": [],
-                "todays_working_hours": "10:00 AM - 06:00 PM",
-                "total_reviews": 77,
-                "type": "transit",
-                "website": "",
-                "time": "11:00"
-            }},
-            {{
-                "day": 2,
-                "business_status": "OPERATIONAL",
-                "description": "Small, cozy dinner spot with framed photos covering the walls serving classic Italian comfort food.",
-                "icon": "https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png",
-                "id": "ChIJ8TFl3M0sDogRlO3_4QWlWVE",
-                "latitude": 41.891066,
-                "latitudeDelta": 1,
-                "longitude": -87.6468314,
-                "longitudeDelta": 1,
-                "name": "La Scarola",
-                "notes": "Notes...",
-                "price_range": 2,
-                "rating": 4.7,
-                "serves": [
-                    "dinner"
-                ],
-                "todays_working_hours": "4:00 AM - 10:00 PM",
-                "total_reviews": 1687,
-                "type": "restaurant",
-                "website": "http://www.lascarola.com/",
-                "time": "18:00"
-            }}]
-
+            [{{"day":1,"business_status":"OPERATIONAL","description":"Relaxed, stylish restaurant & bar near the United Center featuring upscale Italian-American cuisine.","id":"ChIJvS_32SYtDogR2UwKCEiOpw0","latitude":41.8815596,"latitudeDelta":1,"longitude":-87.65316159999999,"longitudeDelta":1,"name":"Viaggio Restaurant Chicago","notes":"Notes...","price_range":2,"rating":4.7,"serves":["lunch"],"todays_working_hours":"4:00 AM - 9:00 PM","total_reviews":748,"type":"tourist","website":"https://www.viaggiochicago.com/","time":"13:30"}},{{"day":2,"business_status":"OPERATIONAL","description":"","icon":"https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/generic_business-71.png","id":"ChIJr9gxmVLTD4gR3ZORqBIh9jo","latitude":41.8967801,"latitudeDelta":1,"longitude":-87.6279205,"longitudeDelta":1,"name":"Chicago","notes":"Notes...","price_range":2,"rating":4.2,"serves":[],"todays_working_hours":"10:00 AM - 06:00 PM","total_reviews":77,"type":"transit","website":"","time":"11:00"}},{{"day":2,"business_status":"OPERATIONAL","description":"Small, cozy dinner spot with framed photos covering the walls serving classic Italian comfort food.","icon":"https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/restaurant-71.png","id":"ChIJ8TFl3M0sDogRlO3_4QWlWVE","latitude":41.891066,"latitudeDelta":1,"longitude":-87.6468314,"longitudeDelta":1,"name":"La Scarola","notes":"Notes...","price_range":2,"rating":4.7,"serves":["dinner"],"todays_working_hours":"4:00 AM - 10:00 PM","total_reviews":1687,"type":"restaurant","website":"http://www.lascarola.com/","time":"15:00"}},{{"day":2,"business_status":"OPERATIONAL","description":"","icon":"https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/generic_business-71.png","id":"ChIJr9gxmVLTD4gR3ZORqBIh9jo","latitude":41.8967801,"latitudeDelta":1,"longitude":-87.6279205,"longitudeDelta":1,"name":"Chicago","notes":"Notes...","price_range":2,"rating":4.2,"serves":[],"todays_working_hours":"10:00 AM - 06:00 PM","total_reviews":77,"type":"tourist","website":"","time":"18:00"}}]
+            
+            Day and time must be added in the generated JSON keeping all other fields as it is.
+            Output JSON should be also minified version of JSON.
             Without fail ensure your output is a list of JSON objects having all the previous fields and the two newly added fields for "day" and "time". Ensure property names have double quotes and not single quotes. Ensure that the number of objects in the JSON list do not go below 5 for the generated trip.
         """
 

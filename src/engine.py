@@ -67,7 +67,7 @@ class Engine(object):
             if len(llm_output) <= 3:
                 print('BACKUP RECOMMENDATION')
                 return self.populate_day_time(modified_backup, params)
-            if len([p for p in llm_output if p['type'] == 'tourist']) == 0:
+            if len([p for p in llm_output if p['type'] == 'tourist']) == 0 or len([p for p in llm_output if p['type'] == 'tourist']) + 2 < len([p for p in llm_output if p['type'] == 'transit']) or len([p for p in llm_output if p['type'] == 'tourist']) + 2 < len([p for p in llm_output if p['type'] == 'restaurant']):
                 print("Insufficient tourist places.")
                 return self.populate_day_time(modified_backup, params)
             return self.populate_day_time(llm_output, params)

@@ -136,13 +136,14 @@ def haversine(lat1, lon1, lat2, lon2):
   distance = R * c
   return distance
 
-def calculate_centroid(points):
-  total_lat = sum(point['latitude'] for point in points)
-  total_lon = sum(point['longitude'] for point in points)
-  
-  centroid_lat = total_lat / len(points)
-  centroid_lon = total_lon / len(points)
-  
+def calculate_centroid(*point_groups):
+  all_points = [point for group in point_groups for point in group]
+  total_lat = sum(point['latitude'] for point in all_points)
+  total_lon = sum(point['longitude'] for point in all_points)
+    
+  centroid_lat = total_lat / len(all_points)
+  centroid_lon = total_lon / len(all_points)
+    
   return (centroid_lat, centroid_lon)
 
 def filter_points_within_radius(points, centroid, radius_km):
@@ -166,10 +167,10 @@ def prepare_servings(place):
   return servings
 
 def filter_farther_places_and_flatten(distance, places):
-  centroid = calculate_centroid(places['transit'])
-  non_transit_places = filter_points_within_radius(places['restaurant'], centroid, distance) + filter_points_within_radius(places['tourist'], centroid, distance)
+  centroid = calculate_centroid(places['tourist'], places['transit'])
+  non_tourist_places = filter_points_within_radius(places['restaurant'], centroid, distance) + filter_points_within_radius(places['transit'], centroid, distance)
 
-  return places['transit'] + non_transit_places
+  return places['tourist'] + non_tourist_places
 
 def parse_working_hours(hours_str):
   start_str, end_str = hours_str.split('-')

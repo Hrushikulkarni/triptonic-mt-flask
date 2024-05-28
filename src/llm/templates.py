@@ -22,8 +22,6 @@ class ValidationTemplate(object):
             A valid request should contain the following:
             - Few locations, should mention at least one
 
-            Any request that contains potentially harmful activities is not valid, regardless of what other details are provided.
-
             For example you are supposed to set plan_is_valid = 0 for all the requests not pertaining to a travel request.
             Additionally for unreasonable requests like "Fly me to the moon" or "I want to walk from India to USA" set plan_is_valid = 0 
             If the request is not valid, set

@@ -10,7 +10,7 @@ from .utils import get_top_n_places, clean_google_maps_data, calculate_minmax_sc
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 print(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.llm.agent import Agent
+from src.llm.agent import Agent, enrich_params
 from src.engine import Engine
 
 class DataLoader(object):
@@ -37,6 +37,7 @@ class DataLoader(object):
         input['timings'] = input.get('timings', '')
         input['origin'] = input.get('origin', '')
 
+        input = enrich_params(input)
         res = self.llm_collection.find_one({'input': input})
 
         if res is None:

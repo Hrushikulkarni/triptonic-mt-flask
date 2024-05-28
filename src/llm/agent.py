@@ -21,11 +21,25 @@ def enrich_params(params):
 
     if params.get('distance') is None:
         params['distance'] = 50
+    else:
+        params['distance'] = int(params['distance'])
+    
+    if params.get('no_of_people') is None:
+        params['no_of_people'] = 2
+    else:
+        params['no_of_people'] = int(params['no_of_people'])
+    
+    if params.get('duration') is None:
+        params['duration'] = 2
+    else:
+        params['duration'] = int(params['duration'])
     
     if params.get('budget') is None:
         params['budget'] = 'medium'
 
-    if params.get('mode_of_transport') == 'BIKING':
+    if params.get('mode_of_transport') is None:
+        params['mode_of_transport'] = 'DRIVING'
+    elif params.get('mode_of_transport') == 'BIKING':
         params['mode_of_transport'] = 'BICYCLING'
 
     params['mode_of_transport'] = 'DRIVING'

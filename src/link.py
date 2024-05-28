@@ -18,8 +18,11 @@ class MagicLink(object):
         return random_str
 
     @staticmethod
-    def save_trip(link, name, params, places):
-        MagicLink.mongo_collection.insert_one({"link": link, "places": places, "name": name, "params": params})
+    def save_update_trip(link, name, params, places):
+        if MagicLink.mongo_collection.find_one({"link": link}):
+            MagicLink.mongo_collection.update_one({"link": link}, {"$set": {"places": places, "name": name, "params": params}})
+        else:
+            MagicLink.mongo_collection.insert_one({"link": link, "places": places, "name": name, "params": params})
 
     @staticmethod
     def get_trip(link):

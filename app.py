@@ -4,7 +4,6 @@ from src.utils import load_secrets
 from flask_cors import CORS, cross_origin
 from src.data_loaders import DataLoader
 from src.link import MagicLink
-from src.utils import clean_google_maps_data, calculate_minmax_score
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -46,9 +45,9 @@ def save_trip():
         places = data.get('places')
         name = data.get('name')
         params = data.get('params')
-        link = wesbite_domain + MagicLink.generate_link()
-
-        MagicLink.save_trip(link, name, params, places)
+        link = MagicLink.website_domain + (data.get('id') if data.get('id') else MagicLink.generate_link())
+        
+        MagicLink.save_update_trip(link, name, params, places)
         return jsonify({"link": link})
         
     except Exception as e:

@@ -67,7 +67,7 @@ class ExtractParametersTemplate(object):
             - Number of people involved in the trip
             - Some other details, like the type of trip such as family/couple/friends
             - Some cuisine inferred from a food item or any activity the user would want to do
-            - Distance radius within which the user wishes to travel in miles, default it to 50.
+            - Distance radius within which the user wishes to travel in miles, default it to 20.
 
             Your output should always contain a list of locations separated by comma, at least one. 
             It may contain the type of trip like family, couple, friends.
@@ -97,7 +97,7 @@ class ExtractParametersTemplate(object):
                 "cuisine": "mexican, indian",
                 "timings": "9:00-18:00",
                 "attractions": "cafe",
-                "distance": 50
+                "distance": 20
             }}
 
             In the example above "mexican" and "indian" are cuisines, not a location.
@@ -127,7 +127,7 @@ class ExtractParametersTemplate(object):
             budget: medium
             duration: 2
             timings: 9:00-20:00
-            distance: 50
+            distance: 20
 
 
             Also, if in prompt, food items like pizza or pasta is mentioned then it's cuisine will be "italian", not pizza and pasta
@@ -192,7 +192,7 @@ class FilterAndOrderingTemplate(object):
                 "attractions": "cafe",
                 "budget": "medium",
                 "cuisine": "italian",
-                "distance": 50,
+                "distance": 20,
                 "duration": 2,
                 "location": "Chicago",
                 "mode_of_transport": "DRIVING",

@@ -59,7 +59,7 @@ def calculate_minmax_score(places):
   combined_scores = normalized_ratings * 0.5 + normalized_user_ratings_totals * 0.5
 
   for i, place in enumerate(places):
-    place['score'] = combined_scores[i]
+    place['score'] = combined_scores[i] if combined_scores[i] > 0.05 else 0.4
   return places
 
 def get_top_n_places(n, places):

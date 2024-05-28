@@ -76,8 +76,7 @@ class Engine(object):
             return self.populate_day_time(modified_backup, params)
 
     def filter(self, places, params):
-        print('Before any filter:', len(places))
-        filtered = filter_farther_places_and_flatten(params.get('distance'), places)
+        filtered = filter_farther_places_and_flatten(int(params.get('distance')), places)
         print('Filter based on distance:', len(filtered))
 
         filtered = filter_places_by_time(filtered, params.get('timings', '07:00-20:00'))

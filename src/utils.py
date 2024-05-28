@@ -9,7 +9,7 @@ from unidecode import unidecode
 
 def clean_timing(text):
   if text.lower() == 'open 24 hours':
-    return 'Open 24 hours'
+    return '12:00 AM - 11:59 PM'
   # Transliterate text to ASCII
   text = unidecode(text)
   

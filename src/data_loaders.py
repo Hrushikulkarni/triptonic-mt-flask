@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 print(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
-from src.llm.agent import Agent
+from src.llm.agent import Agent, enrich_params
 from src.engine import Engine
 
 class DataLoader(object):
@@ -37,6 +37,8 @@ class DataLoader(object):
         input['budget'] = input.get('budget', '')
         input['timings'] = input.get('timings', '')
         input['origin'] = input.get('origin', '')
+
+        input = enrich_params(input)
 
         import time
         tic = time.time()

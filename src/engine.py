@@ -9,7 +9,7 @@ class Engine(object):
         self.llm_api_key = secrets['GOOGLE_GEMINI_API_KEY']
         self.agent = Agent(google_gemini_key=self.llm_api_key, debug=True)
 
-    def populate_day_time(self, llm_output, params):
+    def populate_day_time(self, places, params):
     
         duration = params['duration']
 
@@ -17,7 +17,7 @@ class Engine(object):
         end_time = datetime.strptime("20:00", "%H:%M")
     
         total_time_minutes = int((end_time - start_time).total_seconds() / 60)
-        items = [item for item in llm_output if item != 'prompt']
+        items = [item for item in places if item != 'prompt']
         total_items = len(items)
         items_per_day = total_items // duration
         extra_items = total_items % duration
@@ -53,7 +53,7 @@ class Engine(object):
                         if current_day > duration:
                             current_day = duration  # Prevent going beyond the last day
 
-        return llm_output
+        return places
 
     def order(self, places, params):
         query = f'''
@@ -61,16 +61,19 @@ class Engine(object):
             PARAMETER {params}
         '''
         backup = sorted(places, key=lambda x: x['score'], reverse=True)
+        modified_backup = backup[:duration_places_count(params['duration'])]
         try:
             llm_output = self.agent.generate_trip(query)
             if len(llm_output) <= 3:
                 print('BACKUP RECOMMENDATION')
-                modified_backup = backup[:duration_places_count(params['duration'])]
+                return self.populate_day_time(modified_backup, params)
+            if len([p for p in llm_output if p['type'] == 'tourist']) == 0 or len([p for p in llm_output if p['type'] == 'tourist']) + 2 < len([p for p in llm_output if p['type'] == 'transit']) or len([p for p in llm_output if p['type'] == 'tourist']) + 2 < len([p for p in llm_output if p['type'] == 'restaurant']):
+                print("Insufficient tourist places.")
                 return self.populate_day_time(modified_backup, params)
             return self.populate_day_time(llm_output, params)
         except Exception as e:
             print('ERROR in recommenation engine:', e)
-            return self.populate_day_time(backup, params)
+            return self.populate_day_time(modified_backup, params)
 
     def filter(self, places, params):
         filtered = filter_farther_places_and_flatten(int(params.get('distance')), places)

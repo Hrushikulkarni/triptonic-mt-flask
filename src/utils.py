@@ -59,7 +59,7 @@ def calculate_minmax_score(places):
   combined_scores = normalized_ratings * 0.5 + normalized_user_ratings_totals * 0.5
 
   for i, place in enumerate(places):
-    place['score'] = combined_scores[i]
+    place['score'] = combined_scores[i] if combined_scores[i] > 0.05 else 0.4
   return places
 
 def get_top_n_places(n, places):
@@ -136,13 +136,14 @@ def haversine(lat1, lon1, lat2, lon2):
   distance = R * c
   return distance
 
-def calculate_centroid(points):
-  total_lat = sum(point['latitude'] for point in points)
-  total_lon = sum(point['longitude'] for point in points)
-  
-  centroid_lat = total_lat / len(points)
-  centroid_lon = total_lon / len(points)
-  
+def calculate_centroid(*point_groups):
+  all_points = [point for group in point_groups for point in group]
+  total_lat = sum(point['latitude'] for point in all_points)
+  total_lon = sum(point['longitude'] for point in all_points)
+    
+  centroid_lat = total_lat / len(all_points)
+  centroid_lon = total_lon / len(all_points)
+    
   return (centroid_lat, centroid_lon)
 
 def filter_points_within_radius(points, centroid, radius_km):
@@ -166,10 +167,10 @@ def prepare_servings(place):
   return servings
 
 def filter_farther_places_and_flatten(distance, places):
-  centroid = calculate_centroid(places['transit'])
-  non_transit_places = filter_points_within_radius(places['restaurant'], centroid, distance) + filter_points_within_radius(places['tourist'], centroid, distance)
+  centroid = calculate_centroid(places['tourist'], places['transit'])
+  non_tourist_places = filter_points_within_radius(places['restaurant'], centroid, distance) + filter_points_within_radius(places['transit'], centroid, distance)
 
-  return places['transit'] + non_transit_places
+  return places['tourist'] + non_tourist_places
 
 def parse_working_hours(hours_str):
   start_str, end_str = hours_str.split('-')

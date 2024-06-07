@@ -67,7 +67,7 @@ class ExtractParametersTemplate(object):
             - Number of people involved in the trip
             - Some other details, like the type of trip such as family/couple/friends
             - Some cuisine inferred from a food item or any activity the user would want to do
-            - Distance radius within which the user wishes to travel in miles, default it to 30.
+            - Distance radius within which the user wishes to travel in miles, default it to 40.
 
             Your output should always contain a list of locations separated by comma, at least one. 
             It may contain the type of trip like family, couple, friends.
@@ -97,7 +97,7 @@ class ExtractParametersTemplate(object):
                 "cuisine": "mexican, indian",
                 "timings": "9:00-18:00",
                 "attractions": "cafe",
-                "distance": 30
+                "distance": 40
             }}
 
             In the example above "mexican" and "indian" are cuisines, not a location.
@@ -127,7 +127,7 @@ class ExtractParametersTemplate(object):
             budget: medium
             duration: 2
             timings: 9:00-20:00
-            distance: 30
+            distance: 40
 
 
             Also, if in prompt, food items like pizza or pasta is mentioned then it's cuisine will be "italian", not pizza and pasta
@@ -164,7 +164,6 @@ class FilterAndOrderingTemplate(object):
                 Three day trip: 12 places and so on
             - Per day atleast 2 "tourist" type places should be present.
             - Include all of the type "tourist", "restaurant" and "transit".
-            - The total count of "transit" type places should not exceed the count of "tourist" type places.
             - Select places suitable for the "mode_of_transport":
                 WALKING/BIKING: Choose close-by places or those with bike lanes.
                 DRIVING: Include places that can be farther apart.
@@ -175,8 +174,8 @@ class FilterAndOrderingTemplate(object):
 
             Consider below rules to do the ORDERING of the list of JSON objects:
             - Plan an itinerary for a day trip that includes at least two "tourist" type places. If it's a two-day trip, include at least four "tourist" type places, and so on.
-            - Make sure that the number of "tourist" type places is more than the number of "transit" and "restaurant" type places.
             - No more than 5 places in total per day and no 2 locations at a same time of the day.
+            - At least 1 "transit" type place must be present.
             
             Finally you have to add two attributes to the place's JSON object, they are:
             "day": 1 (it is a number)
@@ -192,7 +191,7 @@ class FilterAndOrderingTemplate(object):
                 "attractions": "cafe",
                 "budget": "medium",
                 "cuisine": "italian",
-                "distance": 30,
+                "distance": 40,
                 "duration": 2,
                 "location": "Chicago",
                 "mode_of_transport": "DRIVING",

@@ -20,7 +20,7 @@ def enrich_params(params):
         params['timings'] = '07:00-20:00'
 
     if params.get('distance') is None:
-        params['distance'] = 30
+        params['distance'] = 40
     else:
         params['distance'] = int(params['distance'])
     
